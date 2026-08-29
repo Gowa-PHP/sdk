@@ -335,6 +335,170 @@ class GowaClient
     }
 
     /**
+     * Encaminha uma mensagem existente para outro destinatário
+     */
+    public function forwardMessage(string $deviceId, string $to, string $providerMessageId): SentMessage
+    {
+        $response = $this->post("/message/{$providerMessageId}/forward", [
+            'phone' => self::jid($to),
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        return $this->sentResult($response, 'encaminhar a mensagem');
+    }
+
+    /**
+     * Envia um link com prévia visual
+     */
+    public function sendLink(string $deviceId, string $to, string $link, ?string $caption = null, ?string $replyTo = null): SentMessage
+    {
+        $body = [
+            'phone' => self::jid($to),
+            'link' => $link,
+        ];
+
+        if ($caption !== null && $caption !== '') {
+            $body['caption'] = $caption;
+        }
+
+        if ($replyTo !== null && $replyTo !== '') {
+            $body['reply_message_id'] = $replyTo;
+        }
+
+        $response = $this->post('/send/link', $body, [], ['X-Device-Id' => $deviceId]);
+
+        return $this->sentResult($response, 'enviar o link');
+    }
+
+    /**
+     * Envia uma enquete (Poll)
+     *
+     * @param list<string> $options
+     */
+    public function sendPoll(string $deviceId, string $to, string $question, array $options, int $maxSelections = 1, ?string $replyTo = null): SentMessage
+    {
+        $body = [
+            'phone' => self::jid($to),
+            'question' => $question,
+            'options' => implode(',', $options),
+            'max_answer' => $maxSelections,
+        ];
+
+        if ($replyTo !== null && $replyTo !== '') {
+            $body['reply_message_id'] = $replyTo;
+        }
+
+        $response = $this->post('/send/poll', $body, [], ['X-Device-Id' => $deviceId]);
+
+        return $this->sentResult($response, 'enviar a enquete');
+    }
+
+    /**
+     * Envia uma figurinha (Sticker WebP)
+     */
+    public function sendSticker(string $deviceId, string $to, Dto\MediaUpload $upload, ?string $replyTo = null): SentMessage
+    {
+        $multipart = [
+            [
+                'name' => 'sticker',
+                'contents' => GuzzleHttp\Psr7\Utils::streamFor($upload->open()),
+                'filename' => $upload->filename,
+                'headers' => ['Content-Type' => $upload->mimeType],
+            ],
+            [
+                'name' => 'phone',
+                'contents' => self::jid($to),
+            ],
+        ];
+
+        if ($replyTo !== null && $replyTo !== '') {
+            $multipart[] = [
+                'name' => 'reply_message_id',
+                'contents' => $replyTo,
+            ];
+        }
+
+        try {
+            $res = $this->http->post('send/sticker', [
+                'headers' => ['X-Device-Id' => $deviceId],
+                'multipart' => $multipart,
+            ]);
+
+            $json = json_decode((string) $res->getBody(), true);
+            $parsed = [
+                'status_code' => $res->getStatusCode(),
+                'body' => is_array($json) ? $json : [],
+            ];
+
+            return $this->sentResult($parsed, 'enviar a figurinha');
+        } catch (GuzzleHttp\Exception\GuzzleException $e) {
+            throw new GowaRequestException("Falha de rede ao enviar figurinha: {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    /**
+     * Edita o texto de uma mensagem enviada
+     */
+    public function editMessage(string $deviceId, string $to, string $providerMessageId, string $newText): SentMessage
+    {
+        $response = $this->post("/message/{$providerMessageId}/update", [
+            'phone' => self::jid($to),
+            'message' => $newText,
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        return $this->sentResult($response, 'editar a mensagem');
+    }
+
+    /**
+     * Apaga a mensagem para todos (Revoke)
+     */
+    public function revokeMessage(string $deviceId, string $to, string $providerMessageId): void
+    {
+        $response = $this->post("/message/{$providerMessageId}/revoke", [
+            'phone' => self::jid($to),
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        $this->results($response, 'revogar a mensagem');
+    }
+
+    /**
+     * Apaga a mensagem localmente (Delete)
+     */
+    public function deleteMessage(string $deviceId, string $to, string $providerMessageId): void
+    {
+        $response = $this->post("/message/{$providerMessageId}/delete", [
+            'phone' => self::jid($to),
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        $this->results($response, 'deletar a mensagem');
+    }
+
+    /**
+     * Favorita ou desfavorita uma mensagem (Star / Unstar)
+     */
+    public function starMessage(string $deviceId, string $to, string $providerMessageId, bool $star = true): void
+    {
+        $endpoint = $star ? "/message/{$providerMessageId}/star" : "/message/{$providerMessageId}/unstar";
+
+        $response = $this->post($endpoint, [
+            'phone' => self::jid($to),
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        $this->results($response, ($star ? 'favoritar' : 'desfavoritar') . ' a mensagem');
+    }
+
+    /**
+     * Marca um áudio como reproduzido (Mark Played)
+     */
+    public function markPlayed(string $deviceId, string $to, string $providerMessageId): void
+    {
+        $response = $this->post("/message/{$providerMessageId}/played", [
+            'phone' => self::jid($to),
+        ], [], ['X-Device-Id' => $deviceId]);
+
+        $this->results($response, 'marcar áudio como reproduzido');
+    }
+
+    /**
      * Confirma leitura de uma mensagem
      */
     public function markRead(string $deviceId, string $to, string $providerMessageId, bool $withTyping = false): void

@@ -85,3 +85,64 @@ test('markRead sends read confirmation', function () {
     expect(fn () => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123'))
         ->not->toThrow(Exception::class);
 });
+
+test('forwardMessage forwards message', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => ['message_id' => 'WAMID_FWD_123'],
+        ])),
+    ]);
+
+    $sent = $client->forwardMessage('device-uuid-1', '5511999998888', 'WAMID_OLD_1');
+    expect($sent->providerMessageId)->toBe('WAMID_FWD_123');
+});
+
+test('sendLink sends url preview message', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => ['message_id' => 'WAMID_LINK_123'],
+        ])),
+    ]);
+
+    $sent = $client->sendLink('device-uuid-1', '5511999998888', 'https://fazz.ai', 'Confira nosso site');
+    expect($sent->providerMessageId)->toBe('WAMID_LINK_123');
+});
+
+test('sendPoll sends interactive poll', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => ['message_id' => 'WAMID_POLL_123'],
+        ])),
+    ]);
+
+    $sent = $client->sendPoll('device-uuid-1', '5511999998888', 'Qual seu horário preferido?', ['Manhã', 'Tarde', 'Noite']);
+    expect($sent->providerMessageId)->toBe('WAMID_POLL_123');
+});
+
+test('editMessage edits sent message text', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => ['message_id' => 'WAMID_EDITED_123'],
+        ])),
+    ]);
+
+    $sent = $client->editMessage('device-uuid-1', '5511999998888', 'WAMID_ORIGINAL', 'Texto corrigido');
+    expect($sent->providerMessageId)->toBe('WAMID_EDITED_123');
+});
+
+test('revokeMessage revokes message for everyone', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => [],
+        ])),
+    ]);
+
+    expect(fn () => $client->revokeMessage('device-uuid-1', '5511999998888', 'WAMID_123'))
+        ->not->toThrow(Exception::class);
+});
+
