@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="art/banner.png" alt="gowa-php Banner" width="100%">
-</p>
+<div align="center">
+  <img src="art/banner.png" alt="gowa-php Banner" width="100%" max-width="800">
 
-<p align="center">
-  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Latest Stable Version"></a>
-  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Total Downloads"></a>
-  <a href="https://github.com/aguinaldotupy/gowa-php/blob/main/LICENSE.txt"><img src="https://img.shields.style/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
-  <a href="https://php.net"><img src="https://img.shields.style/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square" alt="PHP Version"></a>
-</p>
+  # gowa-php
+
+  **Pure PHP SDK for GOWA (go-whatsapp-web-multidevice) & WhatsApp Web, powered by whatsmeow**
+
+  [![Latest Version](https://img.shields.io/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![Total Downloads](https://img.shields.io/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+  [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square)](https://php.net)
+
+</div>
 
 ---
-
-# gowa-php
-
-Pure PHP SDK for seamless integration with the **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)) REST server, powered by the **whatsmeow** Go engine.
-
-Enables device pairing (QR Code / pairing code), sending and receiving text messages, media handling (images, video, voice notes PTT, documents), interactive polls, link previews, and webhook HMAC verification via WhatsApp Web.
 
 > 🇧🇷 Para ler a documentação em Português, acesse [README.pt.md](README.pt.md).
 
@@ -187,6 +184,14 @@ match ($parsed['event']) {
 vendor/bin/pest
 ```
 
+## ⚠️ Disclaimer & Terms of Use
+
+This software is an open-source library created for **educational, research, and testing laboratory purposes**.
+
+- **Third-Party Terms of Service**: Users of this library are solely responsible for complying with WhatsApp's Terms of Service, Meta's Platform Policies, and the terms of any third-party services utilized.
+- **Automated Messaging & Policy Compliance**: Automated or unauthorized messaging may violate platform terms. Users must ensure strict compliance with applicable privacy laws (e.g., GDPR, LGPD), user consent requirements, and platform guidelines.
+- **No Warranty & Liability**: This software is provided "as is", without warranty of any kind, express or implied. The authors and contributors assume no liability for any account bans, data loss, service interruptions, or misuse of this library.
+
 ## License
 
-MIT
+This package is open-source software licensed under the [MIT License](LICENSE).

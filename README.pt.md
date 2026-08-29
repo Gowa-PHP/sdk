@@ -1,21 +1,18 @@
-<p align="center">
-  <img src="art/banner.png" alt="gowa-php Banner" width="100%">
-</p>
+<div align="center">
+  <img src="art/banner.png" alt="gowa-php Banner" width="100%" max-width="800">
 
-<p align="center">
-  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Última Versão Estável"></a>
-  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Total de Downloads"></a>
-  <a href="https://github.com/aguinaldotupy/gowa-php/blob/main/LICENSE.txt"><img src="https://img.shields.style/badge/licen%C3%A7a-MIT-blue.svg?style=flat-square" alt="Licença"></a>
-  <a href="https://php.net"><img src="https://img.shields.style/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square" alt="Versão do PHP"></a>
-</p>
+  # gowa-php
+
+  **SDK em PHP puro para o servidor REST GOWA (go-whatsapp-web-multidevice), alimentado pelo motor whatsmeow**
+
+  [![Última Versão Estável](https://img.shields.io/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![Total de Downloads](https://img.shields.io/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg?style=flat-square)](LICENSE)
+  [![Versão do PHP](https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square)](https://php.net)
+
+</div>
 
 ---
-
-# gowa-php
-
-SDK em PHP puro para integração com o servidor REST **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)), alimentado pelo motor **whatsmeow** em Go.
-
-Permite pareamento de aparelhos (QR Code / Código de 8 dígitos), envio e recebimento de mensagens de texto, gestão de mídias (imagens, vídeos, notas de voz PTT, documentos), enquetes interativas, prévia de links e validação HMAC de webhooks via WhatsApp Web.
 
 > 🇺🇸 For English documentation, see [README.md](README.md).
 
@@ -187,6 +184,14 @@ match ($parsed['event']) {
 vendor/bin/pest
 ```
 
+## ⚠️ Isenção de Responsabilidade e Termos de Uso (Disclaimer)
+
+Este software é uma biblioteca open-source desenvolvida para fins **educacionais, de pesquisa e laboratório de testes**.
+
+- **Termos de Serviço de Terceiros**: Os usuários desta biblioteca são inteiramente responsáveis pelo cumprimento dos Termos de Serviço do WhatsApp, das Políticas da Plataforma Meta e dos termos de uso de quaisquer serviços de terceiros utilizados.
+- **Envio Automatizado e Privacidade**: O envio automatizado ou não autorizado de mensagens pode violar os termos das plataformas. Cabe aos usuários garantir conformidade estrita com as leis de privacidade aplicáveis (ex: LGPD, GDPR), consentimento prévio dos destinatários e diretrizes das ferramentas.
+- **Ausência de Garantias e Responsabilidade**: Este software é fornecido "como está" (*as is*), sem garantias de qualquer tipo, expressas ou implícitas. Os autores e contribuidores não se responsabilizam por eventuais bloqueios de números, banimentos de contas, perda de dados ou mau uso desta biblioteca.
+
 ## Licença
 
-MIT
+Este pacote é um software open-source licenciado sob a [Licença MIT](LICENSE).
