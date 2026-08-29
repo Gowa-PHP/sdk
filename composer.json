@@ -1,0 +1,42 @@
+{
+    "name": "gowa/gowa-php",
+    "description": "SDK PHP puro para o servidor go-whatsapp-web-multidevice (GOWA)",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fazz Team",
+            "email": "dev@fazz.ai"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-json": "*",
+        "ext-hash": "*",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.34 || ^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gowa\\Sdk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Gowa\\Sdk\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/pest"
+    }
+}
