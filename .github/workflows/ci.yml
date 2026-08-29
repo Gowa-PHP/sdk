@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: json, hash, mbstring
+          extensions: json, hash, mbstring, dom, xml, xmlwriter
           coverage: none
 
       - name: Install Composer Dependencies
