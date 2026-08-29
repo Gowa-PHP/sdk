@@ -1,11 +1,11 @@
 {
-    "name": "gowa/gowa-php",
+    "name": "aguinaldotupy/gowa-php",
     "description": "Pure PHP SDK for the go-whatsapp-web-multidevice (GOWA) server",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Fazz Team",
+            "name": "Aguinaldo Tupy",
             "email": "dev@fazz.ai"
         }
     ],

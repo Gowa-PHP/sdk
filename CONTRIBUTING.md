@@ -12,7 +12,7 @@ To set up the development environment locally:
 
 1. **Fork and clone** the repository:
    ```bash
-   git clone https://github.com/your-username/gowa-php.git
+   git clone https://github.com/aguinaldotupy/gowa-php.git
    cd gowa-php
    ```
 

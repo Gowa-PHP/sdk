@@ -22,5 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete Pest PHP test suite with 27 tests and 61 assertions.
 - Documentation in English (`README.md`) and Portuguese (`README.pt.md`), along with `CONTRIBUTING.md` and `SECURITY.md`.
 
-[Unreleased]: https://github.com/gowa-php/gowa-php/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/gowa-php/gowa-php/releases/tag/v1.0.0
+[Unreleased]: https://github.com/aguinaldotupy/gowa-php/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/aguinaldotupy/gowa-php/releases/tag/v1.0.0

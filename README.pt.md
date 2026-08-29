@@ -7,7 +7,7 @@ SDK em PHP puro para integração com o servidor **go-whatsapp-web-multidevice**
 ## Instalação
 
 ```bash
-composer require gowa/gowa-php
+composer require aguinaldotupy/gowa-php
 ```
 
 ## Requisitos
