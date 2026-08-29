@@ -5,8 +5,8 @@
 
   **SDK em PHP puro para o servidor REST GOWA (go-whatsapp-web-multidevice), alimentado pelo motor whatsmeow**
 
-  [![Última Versão Estável](https://img.shields.io/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
-  [![Total de Downloads](https://img.shields.io/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![Última Versão Estável](https://img.shields.io/packagist/v/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
+  [![Total de Downloads](https://img.shields.io/packagist/dt/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
   [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg?style=flat-square)](LICENSE)
   [![Versão do PHP](https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square)](https://php.net)
 
@@ -30,7 +30,7 @@ Este SDK interage com o ecossistema backend em Go criado pela comunidade open-so
 ## Instalação
 
 ```bash
-composer require aguinaldotupy/gowa-php
+composer require gowa-php/sdk
 ```
 
 ## Requisitos

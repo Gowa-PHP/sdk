@@ -5,8 +5,8 @@
 
   **Pure PHP SDK for GOWA (go-whatsapp-web-multidevice) & WhatsApp Web, powered by whatsmeow**
 
-  [![Latest Version](https://img.shields.io/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
-  [![Total Downloads](https://img.shields.io/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square)](https://packagist.org/packages/aguinaldotupy/gowa-php)
+  [![Latest Version](https://img.shields.io/packagist/v/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
+  [![Total Downloads](https://img.shields.io/packagist/dt/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
   [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square)](https://php.net)
 
@@ -30,7 +30,7 @@ This SDK interacts with the Go backend ecosystem created by the open-source comm
 ## Installation
 
 ```bash
-composer require aguinaldotupy/gowa-php
+composer require gowa-php/sdk
 ```
 
 ## Requirements
