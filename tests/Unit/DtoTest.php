@@ -46,3 +46,18 @@ test('avatar dto parses avatar url correctly', function () {
     expect($avatar->url)->toBe('https://pps.whatsapp.net/v/t61/avatar.jpg');
     expect($avatar->id)->toBe('img-123');
 });
+
+test('media upload constructs from external url and path correctly', function () {
+    $urlUpload = \Gowa\Sdk\Dto\MediaUpload::fromUrl('https://example.com/downloads/audio.m4a');
+    expect($urlUpload->filename)->toBe('audio.m4a');
+    expect($urlUpload->mimeType)->toBe('audio/m4a');
+
+    $tempFile = sys_get_temp_dir() . '/sample.png';
+    file_put_contents($tempFile, 'fake png');
+
+    $pathUpload = \Gowa\Sdk\Dto\MediaUpload::fromPath($tempFile, 'image/png');
+    expect($pathUpload->filename)->toBe('sample.png');
+    expect($pathUpload->mimeType)->toBe('image/png');
+
+    @unlink($tempFile);
+});
