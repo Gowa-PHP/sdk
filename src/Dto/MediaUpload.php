@@ -9,7 +9,7 @@ use RuntimeException;
 final class MediaUpload
 {
     /**
-     * @param resource|string $source Stream resource, caminho de arquivo local ou URL externa (http/https)
+     * @param resource|string $source Stream resource, local file path, or external HTTP/HTTPS URL
      */
     public function __construct(
         public readonly mixed $source,
@@ -18,12 +18,12 @@ final class MediaUpload
     ) {}
 
     /**
-     * Cria um MediaUpload a partir de um caminho de arquivo local
+     * Create MediaUpload from a local file path
      */
     public static function fromPath(string $path, ?string $mimeType = null, ?string $filename = null): self
     {
         if (! file_exists($path)) {
-            throw new RuntimeException("Arquivo local não encontrado: {$path}");
+            throw new RuntimeException("Local file not found: {$path}");
         }
 
         $filename ??= basename($path);
@@ -33,12 +33,12 @@ final class MediaUpload
     }
 
     /**
-     * Cria um MediaUpload a partir de uma URL externa (http/https)
+     * Create MediaUpload from an external URL (http/https)
      */
     public static function fromUrl(string $url, ?string $mimeType = null, ?string $filename = null): self
     {
         if (! filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new RuntimeException("URL de mídia inválida: {$url}");
+            throw new RuntimeException("Invalid media URL: {$url}");
         }
 
         $path = parse_url($url, PHP_URL_PATH) ?? '';
@@ -49,21 +49,21 @@ final class MediaUpload
     }
 
     /**
-     * Cria um MediaUpload a partir de um resource de stream já aberto
+     * Create MediaUpload from an open stream resource
      *
      * @param resource $stream
      */
     public static function fromStream(mixed $stream, string $mimeType, string $filename): self
     {
         if (! is_resource($stream)) {
-            throw new RuntimeException("O parâmetro fornecido não é um resource de stream.");
+            throw new RuntimeException("Provided parameter is not a valid stream resource.");
         }
 
         return new self($stream, $mimeType, $filename);
     }
 
     /**
-     * Abre o recurso como stream para envio no multipart
+     * Open resource as stream for multipart uploader
      *
      * @return resource
      */
@@ -90,14 +90,14 @@ final class MediaUpload
                 $stream = @fopen($this->source, 'r', false, $context);
 
                 if ($stream === false) {
-                    throw new RuntimeException("Não foi possível abrir o recurso de mídia: {$this->source}");
+                    throw new RuntimeException("Unable to open media resource: {$this->source}");
                 }
 
                 return $stream;
             }
         }
 
-        throw new RuntimeException("Recurso de mídia inválido.");
+        throw new RuntimeException("Invalid media resource.");
     }
 
     private static function guessMimeFromFilename(string $filename): string

@@ -16,14 +16,14 @@ final class GowaHost
         $targetHost = is_array($target) ? ($target['host'] ?? null) : null;
         $serverHost = is_array($server) ? ($server['host'] ?? null) : null;
 
-        // Caminho relativo é do próprio servidor por construção
+        // Relative path belongs to the server by definition
         if ($targetHost === null) {
             return;
         }
 
         if (! is_string($serverHost) || $serverHost === '' || $targetHost !== $serverHost) {
             throw new GowaSecurityException(
-                "Recusando buscar fora do servidor gowa: {$url}",
+                "Refusing to fetch resource outside of gowa server: {$url}",
             );
         }
     }

@@ -1,29 +1,31 @@
-# gowa-php (SDK PHP para GOWA)
+# gowa-php (SDK for GOWA)
 
-SDK em PHP puro para integração com o servidor **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)), permitindo pareamento, envio e recebimento de mensagens e mídias via WhatsApp Web.
+Pure PHP SDK for integration with the **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)) server, enabling device pairing, sending and receiving messages, and media handling via WhatsApp Web.
 
-## Instalação
+> 🇧🇷 Para ler a documentação em Português, acesse [README.pt.md](README.pt.md).
+
+## Installation
 
 ```bash
 composer require gowa/gowa-php
 ```
 
-## Requisitos
+## Requirements
 
 - PHP >= 8.2
-- Extensão `json` e `hash`
-- Cliente HTTP compátivel com PSR-18 ou Guzzle Client
+- `json` and `hash` extensions
+- PSR-18 compliant HTTP Client or Guzzle Client
 
-## Exemplo de Uso
+## Usage Example
 
-### 1. Inicializar as Configurações e o Cliente
+### 1. Initialize Configuration and Client
 
 ```php
 use Gowa\Sdk\Config;
 use Gowa\Sdk\GowaClient;
 
 $config = new Config(
-    baseUrl: 'https://gowa.suaempresa.com',
+    baseUrl: 'https://gowa.yourcompany.com',
     username: 'admin',
     password: 'secretpassword',
     timeout: 15
@@ -32,68 +34,70 @@ $config = new Config(
 $client = new GowaClient($config);
 ```
 
-### 2. Pareamento por QR Code ou Código
+### 2. Device Pairing (QR Code or Pairing Code)
 
 ```php
-// Criar ou registrar o dispositivo
+// Register device and webhook
 $device = $client->createDevice(
-    deviceId: 'minha-instancia-uuid',
-    webhookUrl: 'https://minhaapi.com/webhooks/gowa/minha-instancia-uuid',
-    webhookSecret: 'minha_chave_hmac_48_chars',
+    deviceId: 'my-instance-uuid',
+    webhookUrl: 'https://myapi.com/webhooks/gowa/my-instance-uuid',
+    webhookSecret: 'my_hmac_secret_48_chars',
     events: ['message', 'message.ack', 'message.reaction']
 );
 
-// Iniciar pareamento por QR Code
-$pairing = $client->startQrPairing('minha-instancia-uuid');
-echo $pairing->qrLink; // URL do QR Code
+// Start pairing via QR Code
+$pairing = $client->startQrPairing('my-instance-uuid');
+echo $pairing->qrLink; // QR Code URL
 
-// Ou pedir código de 8 dígitos para digitar no celular
-$codePairing = $client->startCodePairing('minha-instancia-uuid', '5511999998888');
-echo $codePairing->pairCode; // Ex: ABCD-1234
+// Or request 8-digit code for manual typing on phone
+$codePairing = $client->startCodePairing('my-instance-uuid', '5511999998888');
+echo $codePairing->pairCode; // e.g. ABCD-1234
 ```
 
-### 3. Envio de Mensagens
+### 3. Sending Messages and Media
 
 ```php
-// Enviar texto
-$sent = $client->sendText(
-    deviceId: 'minha-instancia-uuid',
-    to: '5511999998888',
-    text: 'Olá! Mensagem enviada via gowa-php SDK.'
-);
-
-// Enviar áudio gravado (PTT / onda de voz)
 use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
 use Gowa\Sdk\Dto\MediaPayload;
 
-$upload = new MediaUpload('/caminho/para/recado.m4a', 'audio/m4a', 'recado.m4a');
+// Send text
+$client->sendText('my-instance-uuid', '5511999998888', 'Hello! Message sent via gowa-php SDK.');
+
+// Send voice note (PTT) from external URL
+$upload = MediaUpload::fromUrl('https://mycompany.com/storage/voicenote.m4a');
 $media = new MediaPayload(type: MediaType::Audio, upload: $upload, voice: true);
 
-$client->sendMedia('minha-instancia-uuid', '5511999998888', $media);
+$client->sendMedia('my-instance-uuid', '5511999998888', $media);
+
+// Send link preview
+$client->sendLink('my-instance-uuid', '5511999998888', 'https://fazz.ai', 'Check our website');
+
+// Send interactive poll
+$client->sendPoll('my-instance-uuid', '5511999998888', 'What is your preferred time?', ['Morning', 'Afternoon', 'Evening']);
 ```
 
-### 4. Validação de Webhooks (HMAC SHA-256)
+### 4. Webhook Verification (HMAC SHA-256)
 
 ```php
 use Gowa\Sdk\Security\WebhookSignature;
 
 $payload = file_get_contents('php://input');
 $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
-$secret = 'minha_chave_hmac_48_chars';
+$secret = 'my_hmac_secret_48_chars';
 
 if (!WebhookSignature::verify($payload, $signature, $secret)) {
     http_response_code(401);
-    exit('Assinatura inválida');
+    exit('Invalid signature');
 }
 ```
 
-## Executando os Testes (Pest PHP)
+## Running Tests (Pest PHP)
 
 ```bash
 vendor/bin/pest
 ```
 
-## Licença
+## License
 
 MIT
