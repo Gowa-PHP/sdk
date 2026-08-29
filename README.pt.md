@@ -1,8 +1,34 @@
-# gowa-php (SDK PHP para GOWA)
+<p align="center">
+  <img src="art/banner.png" alt="gowa-php Banner" width="100%">
+</p>
 
-SDK em PHP puro para integração com o servidor **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)), permitindo pareamento de aparelhos, envio e recebimento de mensagens, gestão de mídias, enquetes interativas, prévia de links e processamento de webhooks via WhatsApp Web.
+<p align="center">
+  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Última Versão Estável"></a>
+  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Total de Downloads"></a>
+  <a href="https://github.com/aguinaldotupy/gowa-php/blob/main/LICENSE.txt"><img src="https://img.shields.style/badge/licen%C3%A7a-MIT-blue.svg?style=flat-square" alt="Licença"></a>
+  <a href="https://php.net"><img src="https://img.shields.style/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square" alt="Versão do PHP"></a>
+</p>
+
+---
+
+# gowa-php
+
+SDK em PHP puro para integração com o servidor REST **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)), alimentado pelo motor **whatsmeow** em Go.
+
+Permite pareamento de aparelhos (QR Code / Código de 8 dígitos), envio e recebimento de mensagens de texto, gestão de mídias (imagens, vídeos, notas de voz PTT, documentos), enquetes interativas, prévia de links e validação HMAC de webhooks via WhatsApp Web.
 
 > 🇺🇸 For English documentation, see [README.md](README.md).
+
+---
+
+## ⚡ Agradecimentos e Dependências
+
+Este SDK interage com o ecossistema backend em Go criado pela comunidade open-source:
+
+- **[whatsmeow](https://go.mau.fi/whatsmeow)** — Biblioteca Go criada por [Tulir Asokan](https://github.com/tulir) que faz a engenharia reversa do protocolo WebSocket do WhatsApp Web Multi-Device e criptografia Signal.
+- **[go-whatsapp-web-multidevice (GOWA)](https://github.com/aldinokemal/go-whatsapp-web-multidevice)** — O servidor API REST criado por [Aldino Kemal](https://github.com/aldinokemal) que expõe o `whatsmeow` via HTTP e Webhooks.
+
+---
 
 ## Instalação
 

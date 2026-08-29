@@ -1,8 +1,34 @@
-# gowa-php (PHP SDK for GOWA)
+<p align="center">
+  <img src="art/banner.png" alt="gowa-php Banner" width="100%">
+</p>
 
-Pure PHP SDK for integration with the **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)) server, enabling device pairing, sending and receiving messages, media handling, interactive polls, link previews, and webhook parsing via WhatsApp Web.
+<p align="center">
+  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/v/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Latest Stable Version"></a>
+  <a href="https://packagist.org/packages/aguinaldotupy/gowa-php"><img src="https://img.shields.style/packagist/dt/aguinaldotupy/gowa-php.svg?style=flat-square" alt="Total Downloads"></a>
+  <a href="https://github.com/aguinaldotupy/gowa-php/blob/main/LICENSE.txt"><img src="https://img.shields.style/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
+  <a href="https://php.net"><img src="https://img.shields.style/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square" alt="PHP Version"></a>
+</p>
+
+---
+
+# gowa-php
+
+Pure PHP SDK for seamless integration with the **go-whatsapp-web-multidevice** ([GOWA](https://github.com/aldinokemal/go-whatsapp-web-multidevice)) REST server, powered by the **whatsmeow** Go engine.
+
+Enables device pairing (QR Code / pairing code), sending and receiving text messages, media handling (images, video, voice notes PTT, documents), interactive polls, link previews, and webhook HMAC verification via WhatsApp Web.
 
 > 🇧🇷 Para ler a documentação em Português, acesse [README.pt.md](README.pt.md).
+
+---
+
+## ⚡ Acknowledgments & Dependencies
+
+This SDK interacts with the Go backend ecosystem created by the open-source community:
+
+- **[whatsmeow](https://go.mau.fi/whatsmeow)** — The underlying Go library created by [Tulir Asokan](https://github.com/tulir) that reverse-engineers the WhatsApp Web Multi-Device WebSocket protocol and Signal encryption.
+- **[go-whatsapp-web-multidevice (GOWA)](https://github.com/aldinokemal/go-whatsapp-web-multidevice)** — The lightweight REST API wrapper created by [Aldino Kemal](https://github.com/aldinokemal) exposing `whatsmeow` over HTTP and Webhooks.
+
+---
 
 ## Installation
 

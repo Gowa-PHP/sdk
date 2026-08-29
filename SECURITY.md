@@ -15,7 +15,7 @@ If you discover a potential security vulnerability within `gowa-php`, please **d
 
 Instead, please report the vulnerability privately:
 
-- **Email**: Send details to `security@fazz.ai` (or open a private security advisory on GitHub).
+- **Email**: Send details to `aguinaldo.tupy@gmail.com` (or open a private security advisory on GitHub).
 - **Details to Include**:
   - A description of the vulnerability and its potential impact.
   - Step-by-step instructions or proof-of-concept (PoC) code to reproduce the issue.
