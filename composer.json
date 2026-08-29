@@ -1,5 +1,5 @@
 {
-    "name": "aguinaldotupy/gowa-php",
+    "name": "gowa-php/sdk",
     "description": "Pure PHP SDK for the go-whatsapp-web-multidevice (GOWA) server",
     "type": "library",
     "license": "MIT",
@@ -35,6 +35,11 @@
             "pestphp/pest-plugin": true
         },
         "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
     },
     "scripts": {
         "test": "vendor/bin/pest"
