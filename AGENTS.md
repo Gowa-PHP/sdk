@@ -33,6 +33,10 @@ Keep source files focused and match the namespace to their directory. Add scalar
 
 Write Pest tests for every feature or bug fix. Name files `*Test.php` and use readable behavior-focused test descriptions, for example `test('config detects whether credentials and url are properly set', ...)`. Place isolated parsing, DTO, configuration, and security behavior in `tests/Unit/`; place client request/response flows in `tests/Feature/`. Mock HTTP with the helpers and Guzzle `MockHandler` patterns already used in the suite; do not call live GOWA services.
 
+### Pest Version Policy
+
+This project uses **Pest 3.x** (`^3.0`) to maintain compatibility with PHP 8.2+. Pest 4+ requires PHP 8.3+ and Pest 5+ requires PHP 8.4+. Since PHP 8.2 has active support until December 2026 and remains widely deployed, we prioritize broader compatibility over cutting-edge test tooling. When PHP 8.2 reaches end-of-life (late 2026), consider bumping the minimum PHP version to 8.3+ and upgrading to Pest 4 or 5.
+
 ## Commit & Pull Request Guidelines
 
 Use concise Conventional Commit-style subjects, such as `feat: add webhook event parser`, `fix: reject invalid media type`, or `docs: update setup instructions`. Keep each commit scoped to one logical change.
