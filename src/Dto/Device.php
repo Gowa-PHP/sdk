@@ -25,11 +25,18 @@ final class Device
     {
         $device = (array) ($results['device'] ?? $results);
 
+        $phone = null;
+        if (is_string($device['phone'] ?? null) && $device['phone'] !== '') {
+            $phone = (string) $device['phone'];
+        } elseif (is_string($device['jid'] ?? null) && str_contains((string) $device['jid'], '@')) {
+            $phone = explode('@', (string) $device['jid'])[0];
+        }
+
         return new self(
             deviceId: (string) ($device['id'] ?? $device['device_id'] ?? ''),
-            name: (string) ($device['name'] ?? ''),
-            status: strtolower((string) ($device['status'] ?? '')),
-            phone: is_string($device['phone'] ?? null) && $device['phone'] !== '' ? (string) $device['phone'] : null,
+            name: (string) ($device['display_name'] ?? $device['name'] ?? ''),
+            status: strtolower((string) ($device['state'] ?? $device['status'] ?? '')),
+            phone: $phone,
             jid: is_string($device['jid'] ?? null) && $device['jid'] !== '' ? (string) $device['jid'] : null,
             raw: $results,
         );
@@ -37,6 +44,6 @@ final class Device
 
     public function isPaired(): bool
     {
-        return $this->status === 'logged_in';
+        return in_array($this->status, ['logged_in', 'open', 'connected', 'authenticated', 'paired'], true);
     }
 }
