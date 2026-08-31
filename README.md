@@ -36,6 +36,7 @@ composer require gowa-php/sdk
 
 ## Requirements
 
+- A running instance of [GOWA (go-whatsapp-web-multidevice)](https://github.com/aldinokemal/go-whatsapp-web-multidevice) REST server
 - PHP >= 8.2
 - `json` and `hash` extensions
 - PSR-18 compliant HTTP Client or Guzzle Client
