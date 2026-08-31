@@ -12,12 +12,11 @@ final class WebhookSignature
             return false;
         }
 
-        if (! str_starts_with($signatureHeader, 'sha256=')) {
-            return false;
-        }
+        $providedHash = str_starts_with($signatureHeader, 'sha256=')
+            ? substr($signatureHeader, 7)
+            : $signatureHeader;
 
         $expectedHash = hash_hmac('sha256', $rawPayload, $secret);
-        $providedHash = substr($signatureHeader, strlen('sha256='));
 
         return hash_equals($expectedHash, $providedHash);
     }
