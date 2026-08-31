@@ -24,6 +24,7 @@ Este SDK interage com o ecossistema backend em Go criado pela comunidade open-so
 
 - **[whatsmeow](https://go.mau.fi/whatsmeow)** — Biblioteca Go criada por [Tulir Asokan](https://github.com/tulir) que faz a engenharia reversa do protocolo WebSocket do WhatsApp Web Multi-Device e criptografia Signal.
 - **[go-whatsapp-web-multidevice (GOWA)](https://github.com/aldinokemal/go-whatsapp-web-multidevice)** — O servidor API REST criado por [Aldino Kemal](https://github.com/aldinokemal) que expõe o `whatsmeow` via HTTP e Webhooks.
+- **[Especificação OpenAPI](https://github.com/aldinokemal/go-whatsapp-web-multidevice/blob/main/docs/openapi.yaml)** — Contrato oficial OpenAPI 3.0 do GOWA ([Visualizar no Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/aldinokemal/go-whatsapp-web-multidevice/main/docs/openapi.yaml)).
 
 ---
 
@@ -157,6 +158,19 @@ match ($parsed['event']) {
 
 ## Resumo dos Recursos Disponíveis
 
+### Gerenciamento de Dispositivos
+
+| Recurso | Método | Endpoint |
+|---|---|---|
+| Criar Dispositivo & Webhook | `createDevice()` | `POST /devices` |
+| Atualizar Configurações de Webhook | `updateWebhook()` | `PATCH /devices/:id/webhook` |
+| Iniciar Pareamento por QR Code | `startQrPairing()` | `GET /devices/:id/login` |
+| Iniciar Pareamento por Código de 8 Dígitos | `startCodePairing()` | `POST /devices/:id/login/code` |
+| Consultar Status do Dispositivo | `device()` | `GET /devices/:id` |
+| Desconectar Dispositivo (Logout) | `logout()` | `POST /devices/:id/logout` |
+
+### Envio de Mensagens e Interações
+
 | Recurso | Método | Endpoint |
 |---|---|---|
 | Mensagem de Texto | `sendText()` | `POST /send/message` |
@@ -174,9 +188,17 @@ match ($parsed['event']) {
 | Editar Mensagem | `editMessage()` | `POST /message/:id/update` |
 | Revogar (Apagar para todos) | `revokeMessage()` | `POST /message/:id/revoke` |
 | Deletar (Local) | `deleteMessage()` | `POST /message/:id/delete` |
-| Favoritar Mensagem | `starMessage()` | `POST /message/:id/star` |
+| Favoritar / Desfavoritar | `starMessage()` | `POST /message/:id/star`, `POST /message/:id/unstar` |
 | Marcar Áudio Ouvido | `markPlayed()` | `POST /message/:id/played` |
 | Confirmar Leitura / Digitando | `markRead()` | `POST /message/:id/read` |
+
+### Contatos e Download de Mídias
+
+| Recurso | Método | Endpoint |
+|---|---|---|
+| Foto de Perfil do Contato | `avatar()` | `GET /user/avatar` |
+| Preparar Download de Mídia | `describeMedia()` | `GET /message/:id/download` |
+| Baixar Mídia Descriptografada | `downloadMedia()` | GET URL da mídia |
 
 ## Executando os Testes (Pest PHP)
 

@@ -24,6 +24,7 @@ This SDK interacts with the Go backend ecosystem created by the open-source comm
 
 - **[whatsmeow](https://go.mau.fi/whatsmeow)** — The underlying Go library created by [Tulir Asokan](https://github.com/tulir) that reverse-engineers the WhatsApp Web Multi-Device WebSocket protocol and Signal encryption.
 - **[go-whatsapp-web-multidevice (GOWA)](https://github.com/aldinokemal/go-whatsapp-web-multidevice)** — The lightweight REST API wrapper created by [Aldino Kemal](https://github.com/aldinokemal) exposing `whatsmeow` over HTTP and Webhooks.
+- **[OpenAPI Specification](https://github.com/aldinokemal/go-whatsapp-web-multidevice/blob/main/docs/openapi.yaml)** — Official GOWA OpenAPI 3.0 specification ([View in Swagger Editor](https://editor.swagger.io/?url=https://raw.githubusercontent.com/aldinokemal/go-whatsapp-web-multidevice/main/docs/openapi.yaml)).
 
 ---
 
@@ -157,6 +158,19 @@ match ($parsed['event']) {
 
 ## Available Features Summary
 
+### Device Management
+
+| Feature | Method | Endpoint |
+|---|---|---|
+| Register Device & Webhook | `createDevice()` | `POST /devices` |
+| Update Webhook Config | `updateWebhook()` | `PATCH /devices/:id/webhook` |
+| Start QR Pairing | `startQrPairing()` | `GET /devices/:id/login` |
+| Start 8-Digit Code Pairing | `startCodePairing()` | `POST /devices/:id/login/code` |
+| Query Device Info & Status | `device()` | `GET /devices/:id` |
+| Logout Device | `logout()` | `POST /devices/:id/logout` |
+
+### Messages & Interactions
+
 | Feature | Method | Endpoint |
 |---|---|---|
 | Text Message | `sendText()` | `POST /send/message` |
@@ -172,11 +186,19 @@ match ($parsed['event']) {
 | Emoji Reaction | `sendReaction()` | `POST /message/:id/reaction` |
 | Forward Message | `forwardMessage()` | `POST /message/:id/forward` |
 | Edit Message | `editMessage()` | `POST /message/:id/update` |
-| Revoke Message | `revokeMessage()` | `POST /message/:id/revoke` |
+| Revoke Message (Delete for All) | `revokeMessage()` | `POST /message/:id/revoke` |
 | Delete Message (Local) | `deleteMessage()` | `POST /message/:id/delete` |
-| Star / Unstar Message | `starMessage()` | `POST /message/:id/star` |
+| Star / Unstar Message | `starMessage()` | `POST /message/:id/star`, `POST /message/:id/unstar` |
 | Mark Audio Played | `markPlayed()` | `POST /message/:id/played` |
 | Mark Read / Typing | `markRead()` | `POST /message/:id/read` |
+
+### Contacts & Media Download
+
+| Feature | Method | Endpoint |
+|---|---|---|
+| Contact Profile Picture | `avatar()` | `GET /user/avatar` |
+| Prepare Media Download | `describeMedia()` | `GET /message/:id/download` |
+| Download Decrypted Media | `downloadMedia()` | GET media URL |
 
 ## Running Tests (Pest PHP)
 
