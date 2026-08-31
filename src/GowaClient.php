@@ -71,13 +71,19 @@ class GowaClient
      *
      * @param list<string> $events
      */
-    public function createDevice(string $deviceId, string $webhookUrl, string $webhookSecret, array $events): Device
-    {
+    public function createDevice(
+        string $deviceId,
+        string $webhookUrl,
+        string $webhookSecret,
+        array $events,
+        bool $insecureSkipVerify = false
+    ): Device {
         $response = $this->post('/devices', [
             'device_id' => $deviceId,
             'webhook_url' => $webhookUrl,
             'webhook_secret' => $webhookSecret,
             'webhook_events' => implode(',', $events),
+            'webhook_insecure_skip_verify' => $insecureSkipVerify,
         ]);
 
         return Device::fromResults($this->results($response, 'create device'));
@@ -89,10 +95,16 @@ class GowaClient
      * @param list<string> $events
      * @return array<string, mixed>
      */
-    public function updateWebhook(string $deviceId, string $webhookUrl, ?string $webhookSecret = null, array $events = []): array
-    {
+    public function updateWebhook(
+        string $deviceId,
+        string $webhookUrl,
+        ?string $webhookSecret = null,
+        array $events = [],
+        bool $insecureSkipVerify = false
+    ): array {
         $payload = [
             'webhook_url' => $webhookUrl,
+            'webhook_insecure_skip_verify' => $insecureSkipVerify,
         ];
 
         if ($webhookSecret !== null) {
