@@ -60,3 +60,25 @@ test('startCodePairing returns pairing code', function () {
 
     expect($pairing->pairCode)->toBe('K8J9-2L11');
 });
+
+test('updateWebhook sends patch request with webhook url and secret', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code' => 'SUCCESS',
+            'results' => [
+                'device_id' => 'device-uuid-1',
+                'webhook_url' => 'https://app.com/webhooks/gowa/device-uuid-1',
+            ],
+        ])),
+    ]);
+
+    $results = $client->updateWebhook(
+        deviceId: 'device-uuid-1',
+        webhookUrl: 'https://app.com/webhooks/gowa/device-uuid-1',
+        webhookSecret: 'sec_123',
+        events: ['message', 'message.ack']
+    );
+
+    expect($results)->toBeArray();
+    expect($results['device_id'])->toBe('device-uuid-1');
+});

@@ -84,6 +84,33 @@ class GowaClient
     }
 
     /**
+     * Update the webhook URL, secret, and events for an existing device.
+     *
+     * @param list<string> $events
+     * @return array<string, mixed>
+     */
+    public function updateWebhook(string $deviceId, string $webhookUrl, ?string $webhookSecret = null, array $events = []): array
+    {
+        $payload = [
+            'webhook_url' => $webhookUrl,
+        ];
+
+        if ($webhookSecret !== null) {
+            $payload['webhook_secret'] = $webhookSecret;
+        }
+
+        if (! empty($events)) {
+            $payload['webhook_events'] = implode(',', $events);
+        }
+
+        $response = $this->patch("/devices/{$deviceId}/webhook", $payload, [
+            'X-Device-Id' => $deviceId,
+        ]);
+
+        return $this->results($response, 'update webhook');
+    }
+
+    /**
      * Start QR code pairing
      */
     public function startQrPairing(string $deviceId): Pairing
@@ -566,6 +593,32 @@ class GowaClient
             $this->http->get($mediaUrl, ['sink' => $destinationPath]);
         } catch (GuzzleException $e) {
             throw new GowaRequestException("Failed to download media bytes: {$e->getMessage()}", 0, $e);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $queryParams
+     * @param array<string, string> $headers
+     * @return array{status_code: int, body: array<string, mixed>}
+     */
+    private function patch(string $endpoint, array $body = [], array $queryParams = [], array $headers = []): array
+    {
+        try {
+            $res = $this->http->patch(ltrim($endpoint, '/'), [
+                'query' => $queryParams,
+                'json' => $body,
+                'headers' => $headers,
+            ]);
+
+            $json = json_decode((string) $res->getBody(), true);
+
+            return [
+                'status_code' => $res->getStatusCode(),
+                'body' => is_array($json) ? $json : [],
+            ];
+        } catch (GuzzleException $e) {
+            throw new GowaRequestException("HTTP PATCH {$endpoint} error: {$e->getMessage()}", 0, $e);
         }
     }
 
