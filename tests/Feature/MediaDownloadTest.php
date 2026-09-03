@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use GuzzleHttp\Psr7\Response;
 use Gowa\Sdk\Dto\RemoteMedia;
+use GuzzleHttp\Psr7\Response;
 
 test('describeMedia returns RemoteMedia dto for valid response', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'file_path' => '/storage/media/1787663669-b8e6a3b4',
                 'file_size' => 102450,
-                'filename' => '1787663669-b8e6a3b4',
+                'filename'  => '1787663669-b8e6a3b4',
             ],
         ])),
     ]);

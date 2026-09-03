@@ -4,6 +4,4 @@ declare(strict_types=1);
 
 namespace Gowa\Sdk\Exceptions;
 
-class UnsupportedMediaException extends GowaException
-{
-}
+class UnsupportedMediaException extends GowaException {}

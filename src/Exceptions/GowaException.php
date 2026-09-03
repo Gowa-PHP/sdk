@@ -6,6 +6,4 @@ namespace Gowa\Sdk\Exceptions;
 
 use Exception;
 
-class GowaException extends Exception
-{
-}
+class GowaException extends Exception {}

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use GuzzleHttp\Psr7\Response;
 use Gowa\Sdk\Dto\Device;
 use Gowa\Sdk\Dto\Pairing;
+use GuzzleHttp\Psr7\Response;
 
 test('createDevice sends device and webhook configuration', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
-                'id' => 'device-uuid-1',
-                'name' => 'Vendas',
+                'id'     => 'device-uuid-1',
+                'name'   => 'Vendas',
                 'status' => 'disconnected',
             ],
         ])),
@@ -22,7 +22,7 @@ test('createDevice sends device and webhook configuration', function () {
         deviceId: 'device-uuid-1',
         webhookUrl: 'https://app.com/webhooks/gowa/device-uuid-1',
         webhookSecret: 'sec_123',
-        events: ['message', 'message.ack']
+        events: ['message', 'message.ack'],
     );
 
     expect($device)->toBeInstanceOf(Device::class);
@@ -33,7 +33,7 @@ test('createDevice sends device and webhook configuration', function () {
 test('startQrPairing returns pairing object with qr link', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'qr_link' => 'https://gowa.example.com/qr/device-uuid-1',
             ],
@@ -49,7 +49,7 @@ test('startQrPairing returns pairing object with qr link', function () {
 test('startCodePairing returns pairing code', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'pair_code' => 'K8J9-2L11',
             ],
@@ -64,9 +64,9 @@ test('startCodePairing returns pairing code', function () {
 test('updateWebhook sends patch request with webhook url and secret', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
-                'device_id' => 'device-uuid-1',
+                'device_id'   => 'device-uuid-1',
                 'webhook_url' => 'https://app.com/webhooks/gowa/device-uuid-1',
             ],
         ])),
@@ -76,7 +76,7 @@ test('updateWebhook sends patch request with webhook url and secret', function (
         deviceId: 'device-uuid-1',
         webhookUrl: 'https://app.com/webhooks/gowa/device-uuid-1',
         webhookSecret: 'sec_123',
-        events: ['message', 'message.ack']
+        events: ['message', 'message.ack'],
     );
 
     expect($results)->toBeArray();

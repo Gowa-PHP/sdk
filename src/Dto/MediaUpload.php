@@ -56,7 +56,7 @@ final class MediaUpload
     public static function fromStream(mixed $stream, string $mimeType, string $filename): self
     {
         if (! is_resource($stream)) {
-            throw new RuntimeException("Provided parameter is not a valid stream resource.");
+            throw new RuntimeException('Provided parameter is not a valid stream resource.');
         }
 
         return new self($stream, $mimeType, $filename);
@@ -77,12 +77,12 @@ final class MediaUpload
             if (file_exists($this->source) || filter_var($this->source, FILTER_VALIDATE_URL)) {
                 $context = stream_context_create([
                     'http' => [
-                        'timeout' => 30,
+                        'timeout'         => 30,
                         'follow_location' => 1,
-                        'header' => "User-Agent: gowa-php-sdk/1.0\r\n",
+                        'header'          => "User-Agent: gowa-php-sdk/1.0\r\n",
                     ],
                     'ssl' => [
-                        'verify_peer' => true,
+                        'verify_peer'      => true,
                         'verify_peer_name' => true,
                     ],
                 ]);
@@ -97,7 +97,7 @@ final class MediaUpload
             }
         }
 
-        throw new RuntimeException("Invalid media resource.");
+        throw new RuntimeException('Invalid media resource.');
     }
 
     private static function guessMimeFromFilename(string $filename): string
@@ -106,15 +106,15 @@ final class MediaUpload
 
         return match ($ext) {
             'jpg', 'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
-            'webp' => 'image/webp',
-            'mp4' => 'video/mp4',
-            'm4a' => 'audio/m4a',
-            'mp3' => 'audio/mp3',
-            'ogg' => 'audio/ogg',
-            'pdf' => 'application/pdf',
-            default => 'application/octet-stream',
+            'png'         => 'image/png',
+            'gif'         => 'image/gif',
+            'webp'        => 'image/webp',
+            'mp4'         => 'video/mp4',
+            'm4a'         => 'audio/m4a',
+            'mp3'         => 'audio/mp3',
+            'ogg'         => 'audio/ogg',
+            'pdf'         => 'application/pdf',
+            default       => 'application/octet-stream',
         };
     }
 }

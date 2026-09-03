@@ -8,13 +8,13 @@ use Gowa\Sdk\Dto\Pairing;
 
 test('device dto parses response correctly', function () {
     $deviceData = [
-        'code' => 'SUCCESS',
+        'code'    => 'SUCCESS',
         'results' => [
-            'id' => 'device-uuid-123',
-            'name' => 'Vendas Matriz',
+            'id'     => 'device-uuid-123',
+            'name'   => 'Vendas Matriz',
             'status' => 'logged_in',
-            'phone' => '5511999998888',
-            'jid' => '5511999998888@s.whatsapp.net',
+            'phone'  => '5511999998888',
+            'jid'    => '5511999998888@s.whatsapp.net',
         ],
     ];
 

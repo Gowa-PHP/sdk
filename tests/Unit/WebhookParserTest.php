@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
+use Gowa\Sdk\Webhook\Dto\IncomingAck;
+use Gowa\Sdk\Webhook\Dto\IncomingMessage;
+use Gowa\Sdk\Webhook\Dto\IncomingReaction;
 use Gowa\Sdk\Webhook\Event;
 use Gowa\Sdk\Webhook\WebhookParser;
-use Gowa\Sdk\Webhook\Dto\IncomingMessage;
-use Gowa\Sdk\Webhook\Dto\IncomingAck;
-use Gowa\Sdk\Webhook\Dto\IncomingReaction;
 
 test('parses message event correctly', function () {
     $json = json_encode([
-        'event' => 'message',
+        'event'   => 'message',
         'payload' => [
-            'id' => 'WAMID_MSG_123',
-            'chat_id' => '5511999998888@s.whatsapp.net',
+            'id'         => 'WAMID_MSG_123',
+            'chat_id'    => '5511999998888@s.whatsapp.net',
             'is_from_me' => false,
-            'body' => 'Olá! Gostaria de um orçamento.',
-            'timestamp' => '2026-08-29T10:00:00Z',
+            'body'       => 'Olá! Gostaria de um orçamento.',
+            'timestamp'  => '2026-08-29T10:00:00Z',
         ],
     ]);
 
@@ -36,11 +36,11 @@ test('parses message event correctly', function () {
 
 test('parses message.ack event correctly', function () {
     $payload = [
-        'event' => 'message.ack',
+        'event'   => 'message.ack',
         'payload' => [
-            'ids' => ['WAMID_1', 'WAMID_2'],
+            'ids'          => ['WAMID_1', 'WAMID_2'],
             'receipt_type' => 'read',
-            'chat_id' => '5511999998888@s.whatsapp.net',
+            'chat_id'      => '5511999998888@s.whatsapp.net',
         ],
     ];
 
@@ -58,12 +58,12 @@ test('parses message.ack event correctly', function () {
 
 test('parses message.reaction event correctly', function () {
     $payload = [
-        'event' => 'message.reaction',
+        'event'   => 'message.reaction',
         'payload' => [
-            'id' => 'REACT_1',
-            'chat_id' => '5511999998888@s.whatsapp.net',
+            'id'                 => 'REACT_1',
+            'chat_id'            => '5511999998888@s.whatsapp.net',
             'reacted_message_id' => 'WAMID_TARGET',
-            'reaction' => '👍',
+            'reaction'           => '👍',
         ],
     ];
 

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use GuzzleHttp\Psr7\Response;
 use Gowa\Sdk\Dto\ContactCard;
 use Gowa\Sdk\Dto\LocationPayload;
 use Gowa\Sdk\Dto\MediaPayload;
@@ -10,11 +9,12 @@ use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
 use Gowa\Sdk\Dto\SentMessage;
 use Gowa\Sdk\Exceptions\UnsupportedMediaException;
+use GuzzleHttp\Psr7\Response;
 
 test('sendText sends text message to formatted jid', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'message_id' => 'WAMID_987654321',
             ],
@@ -36,7 +36,7 @@ test('sendMedia validates mime type before sending', function () {
     $upload = new MediaUpload($tempFile, 'video/3gpp', 'test_video.3gp');
     $media = new MediaPayload(MediaType::Video, $upload);
 
-    expect(fn () => $client->sendMedia('device-uuid-1', '5511999998888', $media))
+    expect(fn() => $client->sendMedia('device-uuid-1', '5511999998888', $media))
         ->toThrow(UnsupportedMediaException::class);
 
     @unlink($tempFile);
@@ -45,7 +45,7 @@ test('sendMedia validates mime type before sending', function () {
 test('sendLocation sends location payload', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'message_id' => 'WAMID_LOC_123',
             ],
@@ -61,7 +61,7 @@ test('sendLocation sends location payload', function () {
 test('sendContacts sends contact card', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [
                 'message_id' => 'WAMID_CONTACT_123',
             ],
@@ -77,19 +77,19 @@ test('sendContacts sends contact card', function () {
 test('markRead sends read confirmation', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [],
         ])),
     ]);
 
-    expect(fn () => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123'))
+    expect(fn() => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123'))
         ->not->toThrow(Exception::class);
 });
 
 test('forwardMessage forwards message', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => ['message_id' => 'WAMID_FWD_123'],
         ])),
     ]);
@@ -101,7 +101,7 @@ test('forwardMessage forwards message', function () {
 test('sendLink sends url preview message', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => ['message_id' => 'WAMID_LINK_123'],
         ])),
     ]);
@@ -113,7 +113,7 @@ test('sendLink sends url preview message', function () {
 test('sendPoll sends interactive poll', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => ['message_id' => 'WAMID_POLL_123'],
         ])),
     ]);
@@ -125,7 +125,7 @@ test('sendPoll sends interactive poll', function () {
 test('editMessage edits sent message text', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => ['message_id' => 'WAMID_EDITED_123'],
         ])),
     ]);
@@ -137,12 +137,11 @@ test('editMessage edits sent message text', function () {
 test('revokeMessage revokes message for everyone', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([
-            'code' => 'SUCCESS',
+            'code'    => 'SUCCESS',
             'results' => [],
         ])),
     ]);
 
-    expect(fn () => $client->revokeMessage('device-uuid-1', '5511999998888', 'WAMID_123'))
+    expect(fn() => $client->revokeMessage('device-uuid-1', '5511999998888', 'WAMID_123'))
         ->not->toThrow(Exception::class);
 });
-

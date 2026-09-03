@@ -7,6 +7,26 @@ on:
     branches: [ main ]
 
 jobs:
+  lint:
+    name: Code Style (PHP-CS-Fixer)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: json, mbstring
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run PHP-CS-Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
   test:
     runs-on: ubuntu-latest
     strategy:

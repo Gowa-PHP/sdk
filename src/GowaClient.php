@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Gowa\Sdk;
 
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Utils;
 use Gowa\Sdk\Dto\Avatar;
 use Gowa\Sdk\Dto\ContactCard;
 use Gowa\Sdk\Dto\Device;
@@ -21,6 +18,9 @@ use Gowa\Sdk\Exceptions\GowaRequestException;
 use Gowa\Sdk\Exceptions\UnsupportedMediaException;
 use Gowa\Sdk\Exceptions\UnsupportedOperationException;
 use Gowa\Sdk\Security\GowaHost;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Utils;
 
 class GowaClient
 {
@@ -48,9 +48,9 @@ class GowaClient
     ) {
         $this->http = $client ?? new GuzzleClient([
             'base_uri' => $this->config->getNormalizedBaseUrl() . '/',
-            'auth' => [$this->config->username, $this->config->password],
-            'timeout' => $this->config->timeout,
-            'headers' => [
+            'auth'     => [$this->config->username, $this->config->password],
+            'timeout'  => $this->config->timeout,
+            'headers'  => [
                 'Accept' => 'application/json',
             ],
         ]);
@@ -76,13 +76,13 @@ class GowaClient
         string $webhookUrl,
         string $webhookSecret,
         array $events,
-        bool $insecureSkipVerify = false
+        bool $insecureSkipVerify = false,
     ): Device {
         $response = $this->post('/devices', [
-            'device_id' => $deviceId,
-            'webhook_url' => $webhookUrl,
-            'webhook_secret' => $webhookSecret,
-            'webhook_events' => implode(',', $events),
+            'device_id'                    => $deviceId,
+            'webhook_url'                  => $webhookUrl,
+            'webhook_secret'               => $webhookSecret,
+            'webhook_events'               => implode(',', $events),
             'webhook_insecure_skip_verify' => $insecureSkipVerify,
         ]);
 
@@ -100,10 +100,10 @@ class GowaClient
         string $webhookUrl,
         ?string $webhookSecret = null,
         array $events = [],
-        bool $insecureSkipVerify = false
+        bool $insecureSkipVerify = false,
     ): array {
         $payload = [
-            'webhook_url' => $webhookUrl,
+            'webhook_url'                  => $webhookUrl,
             'webhook_insecure_skip_verify' => $insecureSkipVerify,
         ];
 
@@ -186,7 +186,7 @@ class GowaClient
         try {
             $res = $this->http->get($qrLink);
             return [
-                'body' => (string) $res->getBody(),
+                'body'         => (string) $res->getBody(),
                 'content_type' => $res->getHeaderLine('Content-Type') ?: 'image/png',
             ];
         } catch (GuzzleException $e) {
@@ -201,7 +201,7 @@ class GowaClient
     {
         try {
             $response = $this->get('/user/avatar', [
-                'phone' => self::jid($phone),
+                'phone'      => self::jid($phone),
                 'is_preview' => 'true',
             ], [
                 'X-Device-Id' => $deviceId,
@@ -227,7 +227,7 @@ class GowaClient
     public function sendText(string $deviceId, string $to, string $text, ?string $replyTo = null): SentMessage
     {
         $body = [
-            'phone' => self::jid($to),
+            'phone'   => self::jid($to),
             'message' => $text,
         ];
 
@@ -258,48 +258,48 @@ class GowaClient
 
         $multipart = [
             [
-                'name' => $field,
+                'name'     => $field,
                 'contents' => Utils::streamFor($upload->open()),
                 'filename' => $upload->filename,
-                'headers' => ['Content-Type' => $mime],
+                'headers'  => ['Content-Type' => $mime],
             ],
             [
-                'name' => 'phone',
+                'name'     => 'phone',
                 'contents' => self::jid($to),
             ],
         ];
 
         if ($media->type === MediaType::Audio && $media->voice) {
             $multipart[] = [
-                'name' => 'ptt',
+                'name'     => 'ptt',
                 'contents' => 'true',
             ];
         }
 
         if ($media->type !== MediaType::Audio && $media->caption !== null && $media->caption !== '') {
             $multipart[] = [
-                'name' => 'caption',
+                'name'     => 'caption',
                 'contents' => $media->caption,
             ];
         }
 
         if ($replyTo !== null && $replyTo !== '') {
             $multipart[] = [
-                'name' => 'reply_message_id',
+                'name'     => 'reply_message_id',
                 'contents' => $replyTo,
             ];
         }
 
         try {
             $res = $this->http->post($endpoint, [
-                'headers' => ['X-Device-Id' => $deviceId],
+                'headers'   => ['X-Device-Id' => $deviceId],
                 'multipart' => $multipart,
             ]);
 
             $json = json_decode((string) $res->getBody(), true);
             $parsed = [
                 'status_code' => $res->getStatusCode(),
-                'body' => is_array($json) ? $json : [],
+                'body'        => is_array($json) ? $json : [],
             ];
 
             return $this->sentResult($parsed, 'send media');
@@ -314,8 +314,8 @@ class GowaClient
     public function sendLocation(string $deviceId, string $to, LocationPayload $location, ?string $replyTo = null): SentMessage
     {
         $body = [
-            'phone' => self::jid($to),
-            'latitude' => (string) $location->latitude,
+            'phone'     => self::jid($to),
+            'latitude'  => (string) $location->latitude,
             'longitude' => (string) $location->longitude,
         ];
 
@@ -343,8 +343,8 @@ class GowaClient
 
         foreach ($contacts as $contact) {
             $body = [
-                'phone' => self::jid($to),
-                'contact_name' => $contact->name,
+                'phone'         => self::jid($to),
+                'contact_name'  => $contact->name,
                 'contact_phone' => (string) ($contact->phones[0]['phone'] ?? ''),
             ];
 
@@ -392,7 +392,7 @@ class GowaClient
     {
         $body = [
             'phone' => self::jid($to),
-            'link' => $link,
+            'link'  => $link,
         ];
 
         if ($caption !== null && $caption !== '') {
@@ -416,9 +416,9 @@ class GowaClient
     public function sendPoll(string $deviceId, string $to, string $question, array $options, int $maxSelections = 1, ?string $replyTo = null): SentMessage
     {
         $body = [
-            'phone' => self::jid($to),
-            'question' => $question,
-            'options' => implode(',', $options),
+            'phone'      => self::jid($to),
+            'question'   => $question,
+            'options'    => implode(',', $options),
             'max_answer' => $maxSelections,
         ];
 
@@ -438,34 +438,34 @@ class GowaClient
     {
         $multipart = [
             [
-                'name' => 'sticker',
+                'name'     => 'sticker',
                 'contents' => Utils::streamFor($upload->open()),
                 'filename' => $upload->filename,
-                'headers' => ['Content-Type' => $upload->mimeType],
+                'headers'  => ['Content-Type' => $upload->mimeType],
             ],
             [
-                'name' => 'phone',
+                'name'     => 'phone',
                 'contents' => self::jid($to),
             ],
         ];
 
         if ($replyTo !== null && $replyTo !== '') {
             $multipart[] = [
-                'name' => 'reply_message_id',
+                'name'     => 'reply_message_id',
                 'contents' => $replyTo,
             ];
         }
 
         try {
             $res = $this->http->post('send/sticker', [
-                'headers' => ['X-Device-Id' => $deviceId],
+                'headers'   => ['X-Device-Id' => $deviceId],
                 'multipart' => $multipart,
             ]);
 
             $json = json_decode((string) $res->getBody(), true);
             $parsed = [
                 'status_code' => $res->getStatusCode(),
-                'body' => is_array($json) ? $json : [],
+                'body'        => is_array($json) ? $json : [],
             ];
 
             return $this->sentResult($parsed, 'send sticker');
@@ -480,7 +480,7 @@ class GowaClient
     public function editMessage(string $deviceId, string $to, string $providerMessageId, string $newText): SentMessage
     {
         $response = $this->post("/message/{$providerMessageId}/update", [
-            'phone' => self::jid($to),
+            'phone'   => self::jid($to),
             'message' => $newText,
         ], [], ['X-Device-Id' => $deviceId]);
 
@@ -544,7 +544,7 @@ class GowaClient
     {
         if ($withTyping) {
             $this->post('/send/chat-presence', [
-                'phone' => self::jid($to),
+                'phone'  => self::jid($to),
                 'action' => 'start',
             ], [], ['X-Device-Id' => $deviceId]);
         }
@@ -618,8 +618,8 @@ class GowaClient
     {
         try {
             $res = $this->http->patch(ltrim($endpoint, '/'), [
-                'query' => $queryParams,
-                'json' => $body,
+                'query'   => $queryParams,
+                'json'    => $body,
                 'headers' => $headers,
             ]);
 
@@ -627,7 +627,7 @@ class GowaClient
 
             return [
                 'status_code' => $res->getStatusCode(),
-                'body' => is_array($json) ? $json : [],
+                'body'        => is_array($json) ? $json : [],
             ];
         } catch (GuzzleException $e) {
             throw new GowaRequestException("HTTP PATCH {$endpoint} error: {$e->getMessage()}", 0, $e);
@@ -644,8 +644,8 @@ class GowaClient
     {
         try {
             $res = $this->http->post(ltrim($endpoint, '/'), [
-                'query' => $queryParams,
-                'json' => $body,
+                'query'   => $queryParams,
+                'json'    => $body,
                 'headers' => $headers,
             ]);
 
@@ -653,7 +653,7 @@ class GowaClient
 
             return [
                 'status_code' => $res->getStatusCode(),
-                'body' => is_array($json) ? $json : [],
+                'body'        => is_array($json) ? $json : [],
             ];
         } catch (GuzzleException $e) {
             throw new GowaRequestException("HTTP POST {$endpoint} error: {$e->getMessage()}", 0, $e);
@@ -669,7 +669,7 @@ class GowaClient
     {
         try {
             $res = $this->http->get(ltrim($endpoint, '/'), [
-                'query' => $queryParams,
+                'query'   => $queryParams,
                 'headers' => $headers,
             ]);
 
@@ -677,7 +677,7 @@ class GowaClient
 
             return [
                 'status_code' => $res->getStatusCode(),
-                'body' => is_array($json) ? $json : [],
+                'body'        => is_array($json) ? $json : [],
             ];
         } catch (GuzzleException $e) {
             throw new GowaRequestException("HTTP GET {$endpoint} error: {$e->getMessage()}", 0, $e);
@@ -724,7 +724,7 @@ class GowaClient
 
         return match ($mime) {
             'audio/mp4' => 'audio/m4a',
-            default => $mime,
+            default     => $mime,
         };
     }
 
@@ -747,9 +747,9 @@ class GowaClient
     private function mediaEndpoint(MediaType $type): array
     {
         return match ($type) {
-            MediaType::Image => ['send/image', 'image'],
-            MediaType::Video => ['send/video', 'video'],
-            MediaType::Audio => ['send/audio', 'audio'],
+            MediaType::Image    => ['send/image', 'image'],
+            MediaType::Video    => ['send/video', 'video'],
+            MediaType::Audio    => ['send/audio', 'audio'],
             MediaType::Document => ['send/file', 'file'],
         };
     }

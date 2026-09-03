@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
+use Gowa\Sdk\Config;
+use Gowa\Sdk\GowaClient;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
-use Gowa\Sdk\Config;
-use Gowa\Sdk\GowaClient;
 
 function createMockGowaClient(array $responses, ?Config $config = null): GowaClient
 {

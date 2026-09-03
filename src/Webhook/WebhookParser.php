@@ -31,17 +31,17 @@ final class WebhookParser
         $eventId = self::extractEventId($payload, $eventString);
 
         $parsedData = match ($event) {
-            Event::Message => IncomingMessage::fromPayload($payload),
-            Event::MessageAck => IncomingAck::fromPayload($payload),
+            Event::Message         => IncomingMessage::fromPayload($payload),
+            Event::MessageAck      => IncomingAck::fromPayload($payload),
             Event::MessageReaction => IncomingReaction::fromPayload($payload),
-            default => $payload['payload'] ?? $payload,
+            default                => $payload['payload'] ?? $payload,
         };
 
         return [
-            'event' => $event,
+            'event'    => $event,
             'event_id' => $eventId,
-            'data' => $parsedData,
-            'raw' => $payload,
+            'data'     => $parsedData,
+            'raw'      => $payload,
         ];
     }
 
@@ -63,7 +63,7 @@ final class WebhookParser
                 return null;
             }
 
-            return "ack:" . implode(',', array_map('strval', $ids)) . ":{$receipt}";
+            return 'ack:' . implode(',', array_map('strval', $ids)) . ":{$receipt}";
         }
 
         $id = $body['id'] ?? null;

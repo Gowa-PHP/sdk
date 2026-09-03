@@ -42,7 +42,7 @@ if ($recipient === '' || $text === '') {
 }
 
 if (getenv('GOWA_SEND_MESSAGE') !== '1') {
-    $confirmation = prompt("This sends a real message. Type SEND to continue: ");
+    $confirmation = prompt('This sends a real message. Type SEND to continue: ');
     if ($confirmation !== 'SEND') {
         fwrite(STDERR, "Message was not sent.\n");
         exit(1);
