@@ -20,10 +20,10 @@ reviews:
     - Trailing commas obrigatórios em listas multilinhas (arrays, argumentos, parâmetros e match).
     - Métodos e variáveis em camelCase; classes, interfaces e enums em PascalCase.
     - Alinhamento de operadores `=>` em arrays associativos.
-path_filters:
-  - "!art/**"
-  - "!vendor/**"
-  - "!storage/**"
-  - "!node_modules/**"
-  - "!*.lock"
-  - "!*.cache"
+  path_filters:
+    - "!art/**"
+    - "!vendor/**"
+    - "!storage/**"
+    - "!node_modules/**"
+    - "!*.lock"
+    - "!*.cache"

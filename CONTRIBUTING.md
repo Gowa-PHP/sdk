@@ -4,7 +4,7 @@ Thank you for considering contributing to `gowa-php`! We welcome contributions, 
 
 ## Code of Conduct
 
-Please be respectful, professional, and empathetic in all interactions across issues, pull requests, and discussions.
+This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [aguinaldo.tupy@gmail.com](mailto:aguinaldo.tupy@gmail.com).
 
 ## Development Setup
 

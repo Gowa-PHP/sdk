@@ -216,6 +216,10 @@ This software is an open-source library created for **educational, research, and
 - **Automated Messaging & Policy Compliance**: Automated or unauthorized messaging may violate platform terms. Users must ensure strict compliance with applicable privacy laws (e.g., GDPR, LGPD), user consent requirements, and platform guidelines.
 - **No Warranty & Liability**: This software is provided "as is", without warranty of any kind, express or implied. The authors and contributors assume no liability for any account bans, data loss, service interruptions, or misuse of this library.
 
+## Contributing
+
+Please see [CONTRIBUTING.md](https://github.com/Gowa-PHP/sdk/blob/main/CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](https://github.com/Gowa-PHP/sdk/blob/main/CODE_OF_CONDUCT.md) for details.
+
 ## License
 
 This package is open-source software licensed under the [MIT License](LICENSE).
