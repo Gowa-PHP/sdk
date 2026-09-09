@@ -7,6 +7,7 @@
 
   [![Latest Version](https://img.shields.io/packagist/v/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
   [![Total Downloads](https://img.shields.io/packagist/dt/gowa-php/sdk.svg?style=flat-square)](https://packagist.org/packages/gowa-php/sdk)
+  [![Plumb score](https://plumbphp.dev/badges/gowa-php/sdk/composite.svg)](https://plumbphp.dev/gowa-php/sdk)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
   [![PHP Version](https://img.shields.io/badge/PHP-%3E%3D%208.2-777BB4.svg?style=flat-square)](https://php.net)
 

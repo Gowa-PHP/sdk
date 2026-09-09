@@ -1,0 +1,21 @@
+# Tests
+/tests                  export-ignore
+/phpunit.xml            export-ignore
+
+# CI and repository configuration
+/.github                export-ignore
+/.gitattributes         export-ignore
+/.gitignore             export-ignore
+
+# Project documentation, examples and internal settings
+/.ai-memory.toml        export-ignore
+/.coderabbit.yaml       export-ignore
+/.serena                export-ignore
+/AGENTS.md              export-ignore
+/CONTRIBUTING.md        export-ignore
+/examples               export-ignore
+/art                    export-ignore
+
+# Development tooling
+/.php-cs-fixer.dist.php export-ignore
+/.php-cs-fixer.cache    export-ignore
