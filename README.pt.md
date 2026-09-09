@@ -216,6 +216,10 @@ Este software é uma biblioteca open-source desenvolvida para fins **educacionai
 - **Envio Automatizado e Privacidade**: O envio automatizado ou não autorizado de mensagens pode violar os termos das plataformas. Cabe aos usuários garantir conformidade estrita com as leis de privacidade aplicáveis (ex: LGPD, GDPR), consentimento prévio dos destinatários e diretrizes das ferramentas.
 - **Ausência de Garantias e Responsabilidade**: Este software é fornecido "como está" (*as is*), sem garantias de qualquer tipo, expressas ou implícitas. Os autores e contribuidores não se responsabilizam por eventuais bloqueios de números, banimentos de contas, perda de dados ou mau uso desta biblioteca.
 
+## Contribuição
+
+Consulte o guia de [CONTRIBUTING.md](https://github.com/Gowa-PHP/sdk/blob/main/CONTRIBUTING.md) e o [Código de Conduta (CODE_OF_CONDUCT.md)](https://github.com/Gowa-PHP/sdk/blob/main/CODE_OF_CONDUCT.md) para detalhes sobre como colaborar.
+
 ## Licença
 
 Este pacote é um software open-source licenciado sob a [Licença MIT](LICENSE).
