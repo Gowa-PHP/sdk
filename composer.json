@@ -15,7 +15,7 @@
         "ext-hash": "*",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
-        "guzzlehttp/guzzle": "^7.8"
+        "guzzlehttp/guzzle": "^7.8 || ^8.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
