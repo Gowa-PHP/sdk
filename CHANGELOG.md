@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Support for WhatsApp live location (`live_location`) incoming messages in `WebhookParser`.
+- Support for WhatsApp poll messages (`poll`), calendar event requests (`event`), catalog orders (`order`), contacts (`contact`, `contacts_array`), instant video notes (`video_note`), and interactive messages (`interactive`, `list`) in `IncomingMessage`.
+- DTOs: `LiveLocationPayload`, `PollPayload`, `EventPayload`, and `OrderPayload`.
+- Factory methods `fromArray()` on `LocationPayload` and `ContactCard`.
+- Helper methods on `IncomingMessage`: `isLocation()`, `isLiveLocation()`, `location()`, `liveLocation()`, `isPoll()`, `poll()`, `isEvent()`, `event()`, `isOrder()`, `order()`, `isContact()`, `contact()`, `contacts()`, `isInteractive()`, `isVideoNote()`, `isMedia()`.
+- Added missing GOWA webhook events to `Event`: `LabelEdit`, `LabelAssociation`, `NewsletterJoined`, `NewsletterLeft`, `NewsletterMessage`, `NewsletterMute`.
+
 ## [1.0.0] - 2026-08-29
 
 ### Added

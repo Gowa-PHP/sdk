@@ -151,11 +151,31 @@ if (!WebhookSignature::verify($payload, $signature, $secret)) {
 // 2. Converter payload do webhook em DTOs fortemente tipados
 $parsed = WebhookParser::parse($payload);
 
-match ($parsed['event']) {
-    Event::Message => /** @var IncomingMessage $msg */ $msg = $parsed['data'],
-    Event::MessageAck => /** @var IncomingAck $ack */ $ack = $parsed['data'],
-    default => null,
-};
+if ($parsed['event'] === Event::Message) {
+    /** @var IncomingMessage $msg */
+    $msg = $parsed['data'];
+
+    if ($msg->isLiveLocation()) {
+        $liveLoc = $msg->liveLocation();
+        if ($liveLoc !== null) {
+            echo "Coordenadas: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
+        }
+    } elseif ($msg->isPoll()) {
+        $poll = $msg->poll();
+        if ($poll !== null) {
+            echo "Pergunta da enquete: {$poll->question}\n";
+        }
+    } elseif ($msg->isEvent()) {
+        $event = $msg->event();
+        if ($event !== null) {
+            echo "Título do evento: {$event->name}\n";
+        }
+    }
+} elseif ($parsed['event'] === Event::MessageAck) {
+    /** @var IncomingAck $ack */
+    $ack = $parsed['data'];
+    echo "Confirmação: {$ack->receiptType}\n";
+}
 ```
 
 ## Resumo dos Recursos Disponíveis

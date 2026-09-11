@@ -151,11 +151,31 @@ if (!WebhookSignature::verify($payload, $signature, $secret)) {
 // 2. Parse incoming webhook payload
 $parsed = WebhookParser::parse($payload);
 
-match ($parsed['event']) {
-    Event::Message => /** @var IncomingMessage $msg */ $msg = $parsed['data'],
-    Event::MessageAck => /** @var IncomingAck $ack */ $ack = $parsed['data'],
-    default => null,
-};
+if ($parsed['event'] === Event::Message) {
+    /** @var IncomingMessage $msg */
+    $msg = $parsed['data'];
+
+    if ($msg->isLiveLocation()) {
+        $liveLoc = $msg->liveLocation();
+        if ($liveLoc !== null) {
+            echo "Coordinates: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
+        }
+    } elseif ($msg->isPoll()) {
+        $poll = $msg->poll();
+        if ($poll !== null) {
+            echo "Poll question: {$poll->question}\n";
+        }
+    } elseif ($msg->isEvent()) {
+        $event = $msg->event();
+        if ($event !== null) {
+            echo "Event title: {$event->name}\n";
+        }
+    }
+} elseif ($parsed['event'] === Event::MessageAck) {
+    /** @var IncomingAck $ack */
+    $ack = $parsed['data'];
+    echo "Receipt: {$ack->receiptType}\n";
+}
 ```
 
 ## Available Features Summary
