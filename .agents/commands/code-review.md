@@ -1,19 +1,19 @@
 ---
-description: Executa o code review da PR ou branch com CodeRabbit CLI e Quality Gates do REVIEW.md do GOWA PHP SDK
-argument-hint: "[PR_NUMERO_OU_URL] [--base <branch>] [--post-comments]"
+description: Run code review on a PR or branch with CodeRabbit CLI and GOWA PHP SDK REVIEW.md Quality Gates
+argument-hint: "[PR_NUMBER_OR_URL] [--base <branch>] [--post-comments]"
 allowed-tools: "Bash(gh:*), Bash(git:*), Bash(coderabbit:*), Bash(composer:*), Bash(vendor/bin/*)"
 ---
 
 # /code-review
 
-Execute a skill `code-review` para auditar a PR, branch ou alterações locais especificadas em **$ARGUMENTS**.
+Execute the `code-review` skill to audit the PR, branch, or local changes specified in **$ARGUMENTS**.
 
-## Instruções
+## Instructions
 
-1. Se nenhum argumento for fornecido, verifique a branch atual contra `origin/main` ou pergunte ao usuário qual PR deseja revisar.
-2. Siga rigorosamente o fluxo definido em `REVIEW.md` e na skill `code-review`.
-3. Se o CodeRabbit CLI estiver instalado e autenticado (`coderabbit auth status`), rode `coderabbit review --committed --base <BASE> --agent` (ou `--uncommitted --agent` para alterações locais não commitadas); caso contrário, prossiga normalmente com o motor nativo de auditoria do próprio agente baseado nos Quality Gates do `REVIEW.md`.
-4. Valide e filtre todos os findings descartando falsos-positivos de working tree sujo.
-5. Rode as validações locais automatizadas do SDK: `composer test` (Pest 3.x) e `composer lint` (PHP-CS-Fixer).
-6. Apresente o relatório categorizado por severidade (Critical, Major, Minor, Suggestion) seguindo o padrão do `REVIEW.md`.
-7. Caso a flag `--post-comments` esteja presente ou o usuário solicite expressamente, publique a revisão no GitHub usando `gh api repos/:owner/:repo/pulls/:number/reviews`.
+1. If no arguments are provided, inspect the current branch against `origin/main` or prompt the user for the PR/branch to review.
+2. Rigorously follow the workflow defined in `REVIEW.md` and the `code-review` skill.
+3. If the CodeRabbit CLI is installed and authenticated (`coderabbit auth status`), run `coderabbit review --committed --base <BASE> --agent` (or `--uncommitted --agent` for uncommitted local changes); otherwise, proceed seamlessly with the agent's autonomous audit engine based on the `REVIEW.md` Quality Gates.
+4. Validate and filter all findings, discarding false positives caused by dirty working tree files.
+5. Execute the SDK's local automated checks: `composer test` (Pest 3.x) and `composer lint` (PHP-CS-Fixer).
+6. Present the report categorized by severity (Critical, Major, Minor, Suggestion) adhering to the `REVIEW.md` taxonomy.
+7. If the `--post-comments` flag is provided or the user explicitly requests it, publish the review to GitHub using `gh api repos/:owner/:repo/pulls/:number/reviews`.

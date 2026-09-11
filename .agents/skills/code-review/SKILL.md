@@ -1,69 +1,69 @@
 ---
 name: code-review
-description: Executa revisão de código completa de PR, branch ou alterações locais contra o REVIEW.md do GOWA PHP SDK. Integra CodeRabbit CLI (--agent), auditoria multi-eixo (Compatibilidade PHP 8.2 & Tipagem, Segurança & Anti-SSRF, Resiliência de Parsing e Testes Pest), validação automatizada local (composer test e composer lint), filtra falsos-positivos e publica comentários detalhados no GitHub PR via gh. Ative sempre que o usuário pedir "fazer code review", "revisar PR", "rodar coderabbit na PR", "review de código" ou ao validar branches antes de merge.
+description: Executes a complete code review of a PR, branch, or local changes against the GOWA PHP SDK REVIEW.md. Integrates CodeRabbit CLI (--agent), multi-axis auditing (PHP 8.2 Compatibility & Typing, Security & Anti-SSRF, Resilient Parsing, and Pest Testing), local automated validation (composer test and composer lint), filters false positives, and posts detailed review comments to GitHub PRs via gh. Trigger whenever the user asks to "do code review", "review PR", "run coderabbit on PR", "code review", or when validating branches before merge.
 ---
 
 # Code Review Skill — GOWA PHP SDK
 
-Esta skill é o **guardião da prevenção de bugs, quebras de compatibilidade, perda de performance e segurança** no GOWA PHP SDK (`gowa-php`).
-Ela consolida as diretrizes do projeto (`REVIEW.md`, `AGENTS.md`), executa o motor do **CodeRabbit CLI (`--agent`)**, valida o código com as ferramentas locais (`composer lint`, `composer test`), audita as alterações em múltiplos eixos e, opcionalmente, publica os comentários diretamente no GitHub via `gh`.
+This skill acts as the **guardian against bugs, compatibility breaks, performance regressions, and security vulnerabilities** in the GOWA PHP SDK (`gowa-php`).
+It consolidates project guidelines (`REVIEW.md`, `AGENTS.md`), runs the **CodeRabbit CLI (`--agent`)** engine, validates code using local tools (`composer lint`, `composer test`), audits changes across multiple axes, and optionally publishes review comments directly to GitHub via `gh`.
 
 ---
 
-## Fluxo de Execução
+## Execution Flow
 
 ```
-[1. Resolver Alvo] ──> [2. Obter Contexto & Spec] ──> [3. Executar CodeRabbit CLI]
+[1. Resolve Target] ──> [2. Gather Context & Spec] ──> [3. Execute CodeRabbit CLI]
                                                                   │
-[6. Publicar / Reportar] <── [5. Filtrar Alto Sinal] <── [4. Auditoria Multi-Eixo & Testes]
+[6. Publish / Report] <── [5. High-Signal Filtering] <── [4. Multi-Axis Audit & Tests]
 ```
 
 ---
 
-## Passo 1: Resolver Alvo e Preparar o Diff
+## Step 1: Resolve Target and Prepare Diff
 
-Identifique o que será revisado com base no comando do usuário:
+Identify what needs to be reviewed based on the user's input:
 
-1. **Pull Request (ex: `PR #7` ou URL):**
+1. **Pull Request (e.g., `PR #7` or URL):**
    ```bash
    gh pr view <PR> --json number,title,body,baseRefName,headRefName,headRefOid,commits
    ```
-   - Obtenha o commit base e o SHA do commit da PR.
-   - Obtenha o diff exato:
+   - Identify the base commit and the HEAD commit SHA of the PR.
+   - Obtain the exact diff:
      ```bash
      git diff origin/<BASE_BRANCH>...<HEAD_SHA>
      ```
 
-2. **Branch Local vs Base (ex: `feat/...` contra `main`):**
+2. **Local Branch vs Base (e.g., `feat/...` against `main`):**
    ```bash
    git log origin/main..HEAD --oneline
    git diff origin/main...HEAD
    ```
 
-3. **Alterações Locais Não Commitadas (Work in Progress):**
+3. **Uncommitted Local Changes (Work in Progress):**
    ```bash
    git diff
    ```
 
 ---
 
-## Passo 2: Contexto, Spec e Diretrizes
+## Step 2: Context, Spec, and Guidelines
 
-Carregue as referências necessárias:
+Load the necessary references:
 
-1. **Diretrizes do Projeto:**
-   - Leia `REVIEW.md` (regras de severidade e quality gates específicos do SDK).
-   - Consulte `AGENTS.md` para diretrizes de arquitetura e convenções do repositório.
+1. **Project Guidelines:**
+   - Read `REVIEW.md` (severity rules and SDK-specific quality gates).
+   - Check `AGENTS.md` for architectural rules and repository conventions.
 
-2. **Identificação da Spec / Intenção:**
-   - Se for PR: leia a descrição completa da PR e as issues referenciadas (`Refs #...` ou `Closes #...`).
-   - A revisão deve verificar se o código **atendeu fielmente ao propósito** ou se deixou pontas soltas.
+2. **Spec / Intent Identification:**
+   - If reviewing a PR: read the full PR description and any linked issues (`Refs #...` or `Closes #...`).
+   - The review must verify whether the implementation **faithfully fulfills the original intent** without leaving loose ends or regressions.
 
 ---
 
-## Passo 3: CodeRabbit CLI (com Fallback Nativo Transparente)
+## Step 3: CodeRabbit CLI (with Transparent Native Fallback)
 
-Antes de invocar o CodeRabbit, verifique se a CLI está disponível e autenticada:
+Before calling CodeRabbit, verify whether the CLI is installed and authenticated:
 
 ```bash
 if command -v coderabbit >/dev/null 2>&1 && coderabbit auth status >/dev/null 2>&1; then
@@ -73,124 +73,124 @@ else
 fi
 ```
 
-### Cenário A: CodeRabbit Instalado e Autenticado
-Execute o CodeRabbit CLI em modo estruturado (`--agent`):
+### Scenario A: CodeRabbit Installed and Authenticated
+Run the CodeRabbit CLI in structured agent mode (`--agent`):
 ```bash
-# Para alterações commitadas da branch/PR:
+# For committed branch/PR changes:
 coderabbit review --committed --base <BASE_BRANCH> --agent
 
-# Para alterações locais não commitadas:
+# For uncommitted local edits:
 coderabbit review --uncommitted --agent
 ```
-Capture os findings emitidos para cruzamento na auditoria multi-eixo.
+Collect the emitted findings to cross-reference during the multi-axis audit.
 
-> **IMPORTANTE — Cuidado com o Working Tree Local:**
-> O CodeRabbit CLI pode ler arquivos do sistema local. Se houver alterações não commitadas no workspace que não façam parte da PR sob revisão, filtre e descarte apontamentos decorrentes dessas edições locais.
+> **IMPORTANT — Watch Out for Local Working Tree State:**
+> The CodeRabbit CLI reads the local file system. If uncommitted changes exist in the workspace that are not part of the PR under review, filter out and discard any findings caused by those unrelated local edits.
 
-### Cenário B: CodeRabbit Ausente ou Não Autenticado (Fallback Automático)
-- **NUNCA interrompa ou falhe a revisão.**
-- O agente assume **100% da auditoria de forma autônoma**, analisando o diff diretamente contra os eixos do `REVIEW.md` nos Passos 4 e 5.
-- Apenas inclua uma nota informativa de rodapé no relatório final:
-  > ℹ️ *CodeRabbit CLI não detectado ou não autenticado neste ambiente. A revisão foi conduzida com sucesso pelo motor nativo de Quality Gates do agente.*
+### Scenario B: CodeRabbit Absent or Unauthenticated (Automatic Fallback)
+- **NEVER halt or fail the review.**
+- The agent assumes **100% of the audit autonomously**, analyzing the diff directly against the `REVIEW.md` quality gates in Steps 4 and 5.
+- Simply include an informational note in the final report footer:
+  > ℹ️ *CodeRabbit CLI was not detected or not authenticated in this environment. The review was successfully conducted by the agent's native Quality Gates engine.*
 
 ---
 
-## Passo 4: Verificação Automatizada Local
+## Step 4: Local Automated Checks
 
-Antes de finalizar a análise, rode a validação mecânica local:
+Before concluding the analysis, run local mechanical checks:
 
 ```bash
-# 1. Verificar estilo e sintaxe (PHP CS Fixer)
+# 1. Check style and syntax (PHP CS Fixer)
 composer lint
 
-# 2. Executar suíte completa de testes (Pest 3.x)
+# 2. Run the complete test suite (Pest 3.x)
 composer test
 ```
 
-Caso haja falhas nos testes ou no linter, elas devem ser apontadas com severidade **Major** ou **Critical**.
+Any failures in tests or the linter must be flagged with **Major** or **Critical** severity.
 
 ---
 
-## Passo 5: Auditoria Multi-Eixo & Quality Gates
+## Step 5: Multi-Axis Audit & Quality Gates
 
-Além dos achados do CodeRabbit e dos testes, audite o diff contra os 5 eixos do `REVIEW.md`:
+In addition to CodeRabbit findings and automated test results, audit the diff against the 5 axes from `REVIEW.md`:
 
-### Eixo 1: Compatibilidade PHP 8.2 & Tipagem Estrita
-- **PHP 8.2 Baseline:** Há uso de features exclusivas de PHP 8.3+? (Proibido: constantes de classe tipadas `const string FOO`, `#[\Override]`, `json_validate` nativo sem polyfill).
-- **Strict Types:** Todo arquivo novo ou editado possui `declare(strict_types=1);` no topo?
-- **Imutabilidade:** DTOs usam `final class` com propriedades `public readonly`?
-- **Enums Seguros:** Enums possuem fallback `case Unknown = 'unknown'` e método estático `tryFromValue()` para absorver novos tipos do WhatsApp sem exceções não tratadas?
+### Axis 1: PHP 8.2 Compatibility & Strict Typing
+- **PHP 8.2 Baseline:** Are any PHP 8.3+ exclusive features used? (Forbidden: typed class constants `const string FOO`, `#[\Override]`, native `json_validate` without polyfill).
+- **Strict Types:** Does every new or edited PHP file include `declare(strict_types=1);` at the top?
+- **Immutability:** Do DTOs use `final class` declarations with `public readonly` properties?
+- **Safe Enums:** Do enums provide an `Unknown = 'unknown'` fallback case and a static `tryFromValue()` method to absorb new WhatsApp features without uncaught exceptions?
 
-### Eixo 2: Segurança & Anti-SSRF (Tolerância Zero)
-- **Anti-SSRF:** URLs externas ou caminhos recebidos passam por `GowaHost::validate()` antes de qualquer chamada HTTP?
-- **Assinatura HMAC:** Webhooks são validados via `WebhookSignature::verify()` com comparação em tempo constante (`hash_equals`)?
-- **Vazamento de Segredos:** Tokens de API ou segredos de webhook são expostos em logs, exceções ou query strings?
+### Axis 2: Security & Anti-SSRF (Zero Tolerance)
+- **Anti-SSRF:** Do external URLs or paths pass through `GowaHost::validate()` prior to making HTTP calls?
+- **HMAC Signatures:** Are webhooks validated with `WebhookSignature::verify()` using constant-time string comparison (`hash_equals`)?
+- **Secret Leaks:** Are API tokens or webhook secrets exposed in logs, exceptions, or query parameters?
 
-### Eixo 3: Parsing Resiliente & Robustez de Dados
+### Axis 3: Resilient Parsing & Data Robustness
 - **Factory Methods (`fromArray`):**
-  - Tratam entradas vazias ou com tipos inesperados (ex: `['question' => 123]`) retornando `null`?
-  - Coordenadas geográficas (`latitude`, `longitude`) são validadas com `is_finite()` e limites `-90..90` e `-180..180`?
-  - Booleanos aceitam strings `"true"` / `"false"` via `filter_var(..., FILTER_VALIDATE_BOOLEAN)`?
-  - Arrays associativos aninhados (como `phones`) são filtrados descartando chaves inválidas?
-- **Null Safety:** Chamadas encadeadas tratam possíveis retornos nulos antes de acessar propriedades?
+  - Do they handle empty or invalid inputs (e.g., `['question' => 123]`) by returning `null`?
+  - Are geographic coordinates (`latitude`, `longitude`) validated using `is_finite()` and within `-90..90` and `-180..180`?
+  - Are booleans safely parsed from `"true"` / `"false"` strings using `filter_var(..., FILTER_VALIDATE_BOOLEAN)`?
+  - Are nested associative arrays (e.g., `phones`) filtered to discard malformed elements?
+- **Null Safety:** Do chained method calls handle potential `null` returns before accessing object properties?
 
-### Eixo 4: Client HTTP, Roteamento & Pest (Zero Rede Real)
-- **Centralização:** Novas chamadas à API GOWA estão encapsuladas em `src/GowaClient.php`?
-- **Testes Mockados:** Os testes usam `withMockResponse()` / `MockHandler` do Guzzle? É estritamente proibido disparar chamadas HTTP reais durante testes.
-- **Roteamento Fluente:** Métodos `when()` e `otherwise()` em `WebhookEvent` e `IncomingMessage` funcionam de forma atômica e param após o primeiro match.
+### Axis 4: HTTP Client, Routing & Pest (Zero Real Network)
+- **Centralization:** Are all outbound GOWA API requests encapsulated inside `src/GowaClient.php`?
+- **Mocked Tests:** Do tests use `withMockResponse()` / Guzzle's `MockHandler`? Making real outbound HTTP requests during tests is strictly forbidden.
+- **Fluent Routing:** Do `when()` and `otherwise()` handlers in `WebhookEvent` and `IncomingMessage` operate atomically and halt after the first match?
 
-### Eixo 5: Paridade de Documentação & Commits
-- **Documentação Bilíngue:** Novos métodos ou DTOs estão documentados em `README.md` (EN) e `README.pt.md` (PT)?
-- **Changelog:** As mudanças estão resumidas em `CHANGELOG.md` na seção `[Unreleased]`?
-- **Conventional Commits:** Os commits usam mensagens descritivas (`feat:`, `fix:`, `docs:`, `test:`)?
-
----
-
-## Passo 6: Filtragem de Alto Sinal (Zero Bikeshedding)
-
-Aplique o filtro de qualidade antes de relatar:
-
-- **Mantenha:**
-  - 🔴 **Critical**: Falhas de segurança (SSRF, HMAC bypass), quebra de sintaxe/PHP 8.2, quebra de execução, quebra destrutiva de contrato público.
-  - 🟠 **Major**: Falhas de parsing resiliente, testes com rede real, testes quebrando, linter falhando, DTOs mutáveis.
-  - 🟡 **Minor**: Falta de null-safe, ausência de testes para novos caminhos, documentação desatualizada.
-- **Descarte:**
-  - Estilo de código que o PHP-CS-Fixer corrige automaticamente via `composer lint:fix`.
-  - Sugestões puramente teóricas que não impactam o funcionamento da biblioteca.
-  - Apontamentos do CodeRabbit que sejam falsos-positivos decorrentes de arquivos sujos locais.
+### Axis 5: Documentation Parity & Commits
+- **Bilingual Documentation:** Are new public methods or DTOs documented in both `README.md` (EN) and `README.pt.md` (PT)?
+- **Changelog:** Are modifications summarized in `CHANGELOG.md` under the `[Unreleased]` section?
+- **Conventional Commits:** Do commit messages follow standard prefixes (`feat:`, `fix:`, `docs:`, `test:`)?
 
 ---
 
-## Passo 7: Publicação e Apresentação
+## Step 6: High-Signal Filtering (Zero Bikeshedding)
 
-### 1. No Terminal / Chat
-Apresente o resumo categorizado por severidade seguindo a taxonomia do `REVIEW.md`:
-- Resumo executivo da revisão
-- Tabela ou lista de apontamentos com:
-  - Arquivo e linha exatos com link clicável
-  - Descrição objetiva do problema e impacto
-  - Snippet com o código sugerido para correção
+Apply quality filtering before producing the report:
 
-### 2. No GitHub (quando solicitado ou com flag `--post-comments`)
-Envie a revisão diretamente para a PR via GitHub CLI:
+- **Keep:**
+  - 🔴 **Critical**: Security vulnerabilities (SSRF, HMAC bypass), syntax/PHP 8.2 breaks, runtime crashes, breaking API changes.
+  - 🟠 **Major**: Resilient parsing flaws, real network calls in tests, failing tests, linter failures, mutable DTOs.
+  - 🟡 **Minor**: Missing null-safe operators, untested execution paths, outdated documentation.
+- **Discard:**
+  - Cosmetic code style issues that PHP-CS-Fixer fixes automatically via `composer lint:fix`.
+  - Purely theoretical suggestions that do not impact library behavior or reliability.
+  - CodeRabbit findings that are false positives caused by untracked or uncommitted local files.
+
+---
+
+## Step 7: Publishing and Presentation
+
+### 1. Terminal / Chat Output
+Present the summary categorized by severity following the `REVIEW.md` taxonomy:
+- Executive summary of the review
+- Table or list of findings containing:
+  - Exact file path and line number with clickable link
+  - Clear description of the issue and its real-world impact
+  - Code snippet with the recommended fix
+
+### 2. GitHub PR Publication (when requested or with `--post-comments` flag)
+Submit the review directly to the GitHub PR using the GitHub CLI:
 
 ```bash
 cat << 'JSON' > /tmp/pr_review.json
 {
   "commit_id": "HEAD_SHA",
-  "body": "## 🤖 Code Review — PR #NUMERO\n\nRESUMO",
+  "body": "## 🤖 Code Review — PR #NUMBER\n\nSUMMARY",
   "event": "COMMENT",
   "comments": [
     {
       "path": "src/Dto/LocationPayload.php",
       "line": 35,
       "side": "RIGHT",
-      "body": "**[Major] Validação de limites de coordenadas**\n\nDescricao..."
+      "body": "**[Major] Coordinate boundary validation**\n\nDescription..."
     }
   ]
 }
 JSON
 
-gh api repos/OWNER/REPO/pulls/NUMERO/reviews --input /tmp/pr_review.json
+gh api repos/OWNER/REPO/pulls/NUMBER/reviews --input /tmp/pr_review.json
 rm -f /tmp/pr_review.json
 ```
