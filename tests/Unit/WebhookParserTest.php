@@ -237,10 +237,10 @@ test('parses order message correctly', function () {
             'id'      => 'ORDER_MSG_1',
             'chat_id' => '5511999998888@s.whatsapp.net',
             'order'   => [
-                'order_id'          => 'ORD_1234',
-                'order_title'       => 'Camisa Social',
-                'item_count'        => 2,
-                'total_amount_1000' => 199900,
+                'order_id'            => 'ORD_1234',
+                'order_title'         => 'Camisa Social',
+                'item_count'          => 2,
+                'total_amount_1000'   => 199900,
                 'total_currency_code' => 'BRL',
             ],
         ],
@@ -339,5 +339,3 @@ test('parses label and newsletter events correctly', function () {
     expect(Event::tryFromValue('newsletter.message'))->toBe(Event::NewsletterMessage);
     expect(Event::tryFromValue('newsletter.mute'))->toBe(Event::NewsletterMute);
 });
-
-

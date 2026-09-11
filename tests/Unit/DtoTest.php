@@ -147,10 +147,10 @@ test('live location payload parses from array correctly', function () {
 
 test('poll payload parses from array correctly', function () {
     $creation = PollPayload::fromArray([
-        'type'                     => 'creation',
-        'poll_id'                  => 'POLL-1',
-        'question'                 => 'Almoço hoje?',
-        'options'                  => [
+        'type'     => 'creation',
+        'poll_id'  => 'POLL-1',
+        'question' => 'Almoço hoje?',
+        'options'  => [
             ['name' => 'Pizza', 'hash' => 'hash_pizza'],
             ['name' => 'Sushi', 'hash' => 'hash_sushi'],
         ],
@@ -213,13 +213,13 @@ test('event payload parses from array correctly', function () {
 
 test('order payload parses from array correctly', function () {
     $order = OrderPayload::fromArray([
-        'order_id'          => 'ORD_999',
-        'order_title'       => 'Pedido de Roupas',
-        'item_count'        => 3,
-        'total_amount_1000' => 150500, // R$ 150.50
+        'order_id'            => 'ORD_999',
+        'order_title'         => 'Pedido de Roupas',
+        'item_count'          => 3,
+        'total_amount_1000'   => 150500, // R$ 150.50
         'total_currency_code' => 'BRL',
-        'seller_jid'        => '5511999998888@s.whatsapp.net',
-        'message'           => 'Obrigado pela compra!',
+        'seller_jid'          => '5511999998888@s.whatsapp.net',
+        'message'             => 'Obrigado pela compra!',
     ]);
 
     expect($order)->not->toBeNull();
@@ -247,5 +247,3 @@ test('contact card parses from array correctly', function () {
 
     expect(ContactCard::fromArray([]))->toBeNull();
 });
-
-
