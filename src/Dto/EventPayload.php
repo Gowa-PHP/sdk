@@ -29,7 +29,7 @@ final class EventPayload
         $start = $data['start_time'] ?? $data['startTime'] ?? null;
         $end = $data['end_time'] ?? $data['endTime'] ?? null;
         $call = $data['call_link'] ?? $data['callLink'] ?? $data['join_link'] ?? $data['joinLink'] ?? null;
-        $canceled = (bool) ($data['is_canceled'] ?? $data['isCanceled'] ?? false);
+        $canceled = filter_var($data['is_canceled'] ?? $data['isCanceled'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $locData = $data['location'] ?? null;
         $location = is_array($locData) ? LocationPayload::fromArray($locData) : null;

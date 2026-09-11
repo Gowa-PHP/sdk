@@ -27,13 +27,14 @@ final class PollPayload
      */
     public static function fromArray(array $data): ?self
     {
-        $question = $data['question'] ?? $data['title'] ?? null;
-        $pollId = $data['poll_id'] ?? $data['pollId'] ?? $data['id'] ?? null;
-        $type = $data['type'] ?? null;
+        $rawQuestion = $data['question'] ?? $data['title'] ?? null;
+        $question = is_string($rawQuestion) && trim($rawQuestion) !== '' ? $rawQuestion : null;
 
-        if ($question === null && $pollId === null && ! isset($data['options']) && ! isset($data['selected_options'])) {
-            return null;
-        }
+        $rawId = $data['poll_id'] ?? $data['pollId'] ?? $data['id'] ?? null;
+        $pollId = is_string($rawId) && trim($rawId) !== '' ? $rawId : null;
+
+        $rawType = $data['type'] ?? null;
+        $type = is_string($rawType) && trim($rawType) !== '' ? $rawType : null;
 
         $options = isset($data['options']) && is_array($data['options']) ? array_values($data['options']) : [];
         $selectedOptions = isset($data['selected_options']) && is_array($data['selected_options'])
@@ -43,12 +44,16 @@ final class PollPayload
             ? array_values(array_map('strval', $data['selected_option_hashes']))
             : [];
 
+        if ($question === null && $pollId === null && $options === [] && $selectedOptions === []) {
+            return null;
+        }
+
         $selectableCount = $data['selectable_options_count'] ?? $data['selectableOptionsCount'] ?? 1;
 
         return new self(
-            type: is_string($type) ? $type : null,
-            pollId: is_string($pollId) ? $pollId : null,
-            question: is_string($question) ? $question : null,
+            type: $type,
+            pollId: $pollId,
+            question: $question,
             options: $options,
             selectableOptionsCount: is_numeric($selectableCount) ? (int) $selectableCount : 1,
             selectedOptions: $selectedOptions,

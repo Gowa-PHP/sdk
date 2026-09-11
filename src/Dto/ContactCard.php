@@ -37,7 +37,11 @@ final class ContactCard
         if (is_string($phone) && $phone !== '') {
             $phones[] = ['phone' => $phone];
         } elseif (isset($data['phones']) && is_array($data['phones'])) {
-            $phones = array_values($data['phones']);
+            foreach ($data['phones'] as $item) {
+                if (is_array($item) && isset($item['phone']) && is_string($item['phone']) && $item['phone'] !== '') {
+                    $phones[] = ['phone' => $item['phone']];
+                }
+            }
         }
 
         $vcard = isset($data['vcard']) && is_string($data['vcard']) ? $data['vcard'] : null;

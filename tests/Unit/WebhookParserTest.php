@@ -286,6 +286,26 @@ test('parses contact and contacts_array messages correctly', function () {
     expect($msgSingle->contact()->phone())->toBe('+5511988881111');
     expect($msgSingle->contacts())->toHaveCount(1);
 
+    $snakePayload = [
+        'event'     => 'message',
+        'device_id' => '628123456789@s.whatsapp.net',
+        'payload'   => [
+            'id'      => 'CONTACT_MSG_SNAKE',
+            'chat_id' => '5511999998888@s.whatsapp.net',
+            'contact' => [
+                'display_name' => 'Marcos Dias',
+                'phone_number' => '+5511988883333',
+            ],
+        ],
+    ];
+    $parsedSnake = WebhookParser::parse($snakePayload);
+    /** @var IncomingMessage $msgSnake */
+    $msgSnake = $parsedSnake['data'];
+    expect($msgSnake->type)->toBe('contact');
+    expect($msgSnake->contact())->not->toBeNull();
+    expect($msgSnake->contact()->name)->toBe('Marcos Dias');
+    expect($msgSnake->contacts())->toHaveCount(1);
+
     $arrayPayload = [
         'event'     => 'message',
         'device_id' => '628123456789@s.whatsapp.net',

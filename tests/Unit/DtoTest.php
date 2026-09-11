@@ -95,6 +95,11 @@ test('location payload parses from array with protobuf or standard keys', functi
 
     expect(LocationPayload::fromArray([]))->toBeNull();
     expect(LocationPayload::fromArray(['latitude' => 'invalid', 'longitude' => -46.633308]))->toBeNull();
+    expect(LocationPayload::fromArray(['latitude' => 91, 'longitude' => 0]))->toBeNull();
+    expect(LocationPayload::fromArray(['latitude' => -90.1, 'longitude' => 0]))->toBeNull();
+    expect(LocationPayload::fromArray(['latitude' => 0, 'longitude' => 181]))->toBeNull();
+    expect(LocationPayload::fromArray(['latitude' => 0, 'longitude' => -180.1]))->toBeNull();
+    expect(LocationPayload::fromArray(['latitude' => INF, 'longitude' => 0]))->toBeNull();
 });
 
 test('live location payload parses from array correctly', function () {
@@ -143,6 +148,11 @@ test('live location payload parses from array correctly', function () {
     expect($snakeCase->caption)->toBeNull();
 
     expect(LiveLocationPayload::fromArray([]))->toBeNull();
+    expect(LiveLocationPayload::fromArray(['latitude' => 91, 'longitude' => 0]))->toBeNull();
+    expect(LiveLocationPayload::fromArray(['latitude' => -91, 'longitude' => 0]))->toBeNull();
+    expect(LiveLocationPayload::fromArray(['latitude' => 0, 'longitude' => 181]))->toBeNull();
+    expect(LiveLocationPayload::fromArray(['latitude' => 0, 'longitude' => -181]))->toBeNull();
+    expect(LiveLocationPayload::fromArray(['latitude' => INF, 'longitude' => 0]))->toBeNull();
 });
 
 test('poll payload parses from array correctly', function () {
@@ -182,6 +192,8 @@ test('poll payload parses from array correctly', function () {
     expect($vote->selectedOptionHashes)->toBe(['hash_sushi']);
 
     expect(PollPayload::fromArray([]))->toBeNull();
+    expect(PollPayload::fromArray(['question' => 123]))->toBeNull();
+    expect(PollPayload::fromArray(['poll_id' => []]))->toBeNull();
 });
 
 test('event payload parses from array correctly', function () {
@@ -208,6 +220,18 @@ test('event payload parses from array correctly', function () {
     expect($event->location)->toBeInstanceOf(LocationPayload::class);
     expect($event->location->latitude)->toBe(-23.55052);
 
+    $stringFalse = EventPayload::fromArray([
+        'name'        => 'Reunião',
+        'is_canceled' => 'false',
+    ]);
+    expect($stringFalse->isCanceled)->toBeFalse();
+
+    $stringTrue = EventPayload::fromArray([
+        'name'        => 'Reunião Cancelada',
+        'is_canceled' => 'true',
+    ]);
+    expect($stringTrue->isCanceled)->toBeTrue();
+
     expect(EventPayload::fromArray([]))->toBeNull();
 });
 
@@ -231,6 +255,8 @@ test('order payload parses from array correctly', function () {
     expect($order->sellerJid)->toBe('5511999998888@s.whatsapp.net');
 
     expect(OrderPayload::fromArray([]))->toBeNull();
+    expect(OrderPayload::fromArray(['order_id' => []]))->toBeNull();
+    expect(OrderPayload::fromArray(['order_title' => []]))->toBeNull();
 });
 
 test('contact card parses from array correctly', function () {
@@ -244,6 +270,18 @@ test('contact card parses from array correctly', function () {
     expect($single->name)->toBe('Carlos Souza');
     expect($single->phone())->toBe('+5511977776666');
     expect($single->vcard)->toBe('BEGIN:VCARD...');
+
+    $filteredPhones = ContactCard::fromArray([
+        'name'   => 'Carlos Souza',
+        'phones' => [
+            ['invalid' => 'missing phone key'],
+            ['phone' => ''],
+            ['phone' => '+5511977778888'],
+        ],
+    ]);
+    expect($filteredPhones)->not->toBeNull();
+    expect($filteredPhones->phones)->toBe([['phone' => '+5511977778888']]);
+    expect($filteredPhones->phone())->toBe('+5511977778888');
 
     expect(ContactCard::fromArray([]))->toBeNull();
 });

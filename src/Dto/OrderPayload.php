@@ -21,34 +21,47 @@ final class OrderPayload
      */
     public static function fromArray(array $data): ?self
     {
-        $id = $data['order_id'] ?? $data['orderId'] ?? $data['id'] ?? null;
-        $title = $data['order_title'] ?? $data['orderTitle'] ?? $data['title'] ?? null;
-        $itemCount = $data['item_count'] ?? $data['itemCount'] ?? null;
-        $currency = $data['total_currency_code'] ?? $data['totalCurrencyCode'] ?? $data['currency'] ?? null;
-        $seller = $data['seller_jid'] ?? $data['sellerJid'] ?? null;
-        $msg = $data['message'] ?? null;
+        $rawId = $data['order_id'] ?? $data['orderId'] ?? $data['id'] ?? null;
+        $orderId = is_string($rawId) && trim($rawId) !== '' ? $rawId : null;
+
+        $rawTitle = $data['order_title'] ?? $data['orderTitle'] ?? $data['title'] ?? null;
+        $title = is_string($rawTitle) && trim($rawTitle) !== '' ? $rawTitle : null;
+
+        $rawCount = $data['item_count'] ?? $data['itemCount'] ?? null;
+        $itemCount = $rawCount !== null && is_numeric($rawCount) ? (int) $rawCount : null;
+
+        $rawCurrency = $data['total_currency_code'] ?? $data['totalCurrencyCode'] ?? $data['currency'] ?? null;
+        $currency = is_string($rawCurrency) && trim($rawCurrency) !== '' ? $rawCurrency : null;
+
+        $rawSeller = $data['seller_jid'] ?? $data['sellerJid'] ?? null;
+        $sellerJid = is_string($rawSeller) && trim($rawSeller) !== '' ? $rawSeller : null;
+
+        $rawMsg = $data['message'] ?? null;
+        $message = is_string($rawMsg) ? $rawMsg : null;
 
         $amount1000 = $data['total_amount_1000'] ?? $data['totalAmount1000'] ?? null;
         $amount = $data['total_amount'] ?? $data['totalAmount'] ?? null;
         $finalAmount = null;
         if ($amount1000 !== null && is_numeric($amount1000)) {
-            $finalAmount = ((float) $amount1000) / 1000.0;
+            $parsed = ((float) $amount1000) / 1000.0;
+            $finalAmount = is_finite($parsed) ? $parsed : null;
         } elseif ($amount !== null && is_numeric($amount)) {
-            $finalAmount = (float) $amount;
+            $parsed = (float) $amount;
+            $finalAmount = is_finite($parsed) ? $parsed : null;
         }
 
-        if ($id === null && $title === null && $itemCount === null && $finalAmount === null) {
+        if ($orderId === null && $title === null && $itemCount === null && $finalAmount === null) {
             return null;
         }
 
         return new self(
-            orderId: is_string($id) ? $id : null,
-            title: is_string($title) ? $title : null,
-            itemCount: $itemCount !== null && is_numeric($itemCount) ? (int) $itemCount : null,
+            orderId: $orderId,
+            title: $title,
+            itemCount: $itemCount,
             totalAmount: $finalAmount,
-            currency: is_string($currency) ? $currency : null,
-            sellerJid: is_string($seller) ? $seller : null,
-            message: is_string($msg) ? $msg : null,
+            currency: $currency,
+            sellerJid: $sellerJid,
+            message: $message,
         );
     }
 }

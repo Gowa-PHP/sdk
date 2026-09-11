@@ -29,6 +29,13 @@ final class LiveLocationPayload
             return null;
         }
 
+        $latFloat = (float) $lat;
+        $lngFloat = (float) $lng;
+
+        if (! is_finite($latFloat) || ! is_finite($lngFloat) || $latFloat < -90.0 || $latFloat > 90.0 || $lngFloat < -180.0 || $lngFloat > 180.0) {
+            return null;
+        }
+
         $accuracy = $data['accuracyInMeters'] ?? $data['accuracy_in_meters'] ?? null;
         $speed = $data['speedInMps'] ?? $data['speed_in_mps'] ?? null;
         $bearing = $data['degreesClockwiseFromMagneticNorth'] ?? $data['degrees_clockwise_from_magnetic_north'] ?? null;
@@ -37,8 +44,8 @@ final class LiveLocationPayload
         $timeOffset = $data['timeOffset'] ?? $data['time_offset'] ?? null;
 
         return new self(
-            latitude: (float) $lat,
-            longitude: (float) $lng,
+            latitude: $latFloat,
+            longitude: $lngFloat,
             accuracyInMeters: $accuracy !== null && is_numeric($accuracy) ? (int) $accuracy : null,
             speedInMps: $speed !== null && is_numeric($speed) ? (float) $speed : null,
             degreesClockwiseFromMagneticNorth: $bearing !== null && is_numeric($bearing) ? (int) $bearing : null,

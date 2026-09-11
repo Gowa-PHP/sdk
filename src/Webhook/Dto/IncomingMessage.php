@@ -175,7 +175,12 @@ final class IncomingMessage
             return [];
         }
 
-        if (isset($data['displayName']) || isset($data['name']) || isset($data['vcard'])) {
+        if (
+            isset($data['displayName'])
+            || isset($data['display_name'])
+            || isset($data['name'])
+            || isset($data['vcard'])
+        ) {
             $card = ContactCard::fromArray($data);
 
             return $card !== null ? [$card] : [];

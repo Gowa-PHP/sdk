@@ -23,9 +23,16 @@ final class LocationPayload
             return null;
         }
 
+        $latFloat = (float) $lat;
+        $lngFloat = (float) $lng;
+
+        if (! is_finite($latFloat) || ! is_finite($lngFloat) || $latFloat < -90.0 || $latFloat > 90.0 || $lngFloat < -180.0 || $lngFloat > 180.0) {
+            return null;
+        }
+
         return new self(
-            latitude: (float) $lat,
-            longitude: (float) $lng,
+            latitude: $latFloat,
+            longitude: $lngFloat,
         );
     }
 }
