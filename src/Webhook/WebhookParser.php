@@ -14,9 +14,8 @@ final class WebhookParser
      * Parse raw json payload or array into structured event object
      *
      * @param string|array<string, mixed> $rawPayload
-     * @return array{event: Event, event_id: ?string, data: mixed, raw: array<string, mixed>}
      */
-    public static function parse(string|array $rawPayload): array
+    public static function parse(string|array $rawPayload): WebhookEvent
     {
         $payload = is_string($rawPayload)
             ? (json_decode($rawPayload, true) ?? [])
@@ -37,12 +36,12 @@ final class WebhookParser
             default                => $payload['payload'] ?? $payload,
         };
 
-        return [
-            'event'    => $event,
-            'event_id' => $eventId,
-            'data'     => $parsedData,
-            'raw'      => $payload,
-        ];
+        return new WebhookEvent(
+            event: $event,
+            eventId: $eventId,
+            data: $parsedData,
+            raw: $payload,
+        );
     }
 
     /**

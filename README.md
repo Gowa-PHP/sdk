@@ -132,11 +132,14 @@ $client->starMessage('my-instance-uuid', '5511999998888', 'WAMID_ORIGINAL_123', 
 ### 4. Webhook Verification & Event Parsing
 
 ```php
+use Gowa\Sdk\Dto\EventPayload;
+use Gowa\Sdk\Dto\LiveLocationPayload;
+use Gowa\Sdk\Dto\PollPayload;
 use Gowa\Sdk\Security\WebhookSignature;
-use Gowa\Sdk\Webhook\WebhookParser;
-use Gowa\Sdk\Webhook\Event;
-use Gowa\Sdk\Webhook\Dto\IncomingMessage;
 use Gowa\Sdk\Webhook\Dto\IncomingAck;
+use Gowa\Sdk\Webhook\Dto\IncomingMessage;
+use Gowa\Sdk\Webhook\Event;
+use Gowa\Sdk\Webhook\WebhookParser;
 
 $payload = file_get_contents('php://input');
 $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
@@ -148,34 +151,37 @@ if (!WebhookSignature::verify($payload, $signature, $secret)) {
     exit('Invalid signature');
 }
 
-// 2. Parse incoming webhook payload
-$parsed = WebhookParser::parse($payload);
+// 2. Parse incoming webhook payload with fluent routing
+WebhookParser::parse($payload)
+    ->onMessage(function (IncomingMessage $msg) {
+        $msg
+            ->whenLiveLocation(function (LiveLocationPayload $loc) {
+                echo "Coordinates: {$loc->latitude}, {$loc->longitude}\n";
+            })
+            ->whenPoll(function (PollPayload $poll) {
+                echo "Poll question: {$poll->question}\n";
+            })
+            ->whenEvent(function (EventPayload $event) {
+                echo "Event title: {$event->name}\n";
+            })
+            ->whenText(function (string $text) {
+                echo "Text: {$text}\n";
+            })
+            ->otherwise(function (IncomingMessage $msg) {
+                echo "Other message type: {$msg->type}\n";
+            });
+    })
+    ->onAck(function (IncomingAck $ack) {
+        echo "Receipt: {$ack->receiptType}\n";
+    })
+    ->otherwise(function (mixed $data, Event $event) {
+        echo "Unhandled or unknown event: {$event->value}\n";
+    });
 
-if ($parsed['event'] === Event::Message) {
-    /** @var IncomingMessage $msg */
-    $msg = $parsed['data'];
-
-    if ($msg->isLiveLocation()) {
-        $liveLoc = $msg->liveLocation();
-        if ($liveLoc !== null) {
-            echo "Coordinates: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
-        }
-    } elseif ($msg->isPoll()) {
-        $poll = $msg->poll();
-        if ($poll !== null) {
-            echo "Poll question: {$poll->question}\n";
-        }
-    } elseif ($msg->isEvent()) {
-        $event = $msg->event();
-        if ($event !== null) {
-            echo "Event title: {$event->name}\n";
-        }
-    }
-} elseif ($parsed['event'] === Event::MessageAck) {
-    /** @var IncomingAck $ack */
-    $ack = $parsed['data'];
-    echo "Receipt: {$ack->receiptType}\n";
-}
+// Traditional array access and helper methods remain fully supported:
+// $event = WebhookParser::parse($payload);
+// if ($event->isMessage()) { $msg = $event->message(); ... }
+// or $event['event'] === Event::Message
 ```
 
 ## Available Features Summary

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Fluent webhook event dispatcher `WebhookEvent` with `when()`, `onMessage()`, `onAck()`, `onReaction()`, and `otherwise()` (implementing `ArrayAccess` for 100% backwards compatibility with array indexing).
+- Enum `MessageType` covering all WhatsApp message types with safe fallback to `MessageType::Unknown`.
+- Fluent message routing on `IncomingMessage` with `when()`, `whenText()`, `whenLiveLocation()`, `whenLocation()`, `whenPoll()`, `whenEvent()`, `whenOrder()`, `whenContact()`, `whenContacts()`, `whenMedia()`, and `otherwise()`.
 - Support for WhatsApp live location (`live_location`) incoming messages in `WebhookParser`.
 - Support for WhatsApp poll messages (`poll`), calendar event requests (`event`), catalog orders (`order`), contacts (`contact`, `contacts_array`), instant video notes (`video_note`), and interactive messages (`interactive`, `list`) in `IncomingMessage`.
 - DTOs: `LiveLocationPayload`, `PollPayload`, `EventPayload`, and `OrderPayload`.
