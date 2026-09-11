@@ -132,11 +132,14 @@ $client->starMessage('my-instance-uuid', '5511999998888', 'WAMID_ORIGINAL_123', 
 ### 4. Webhook Verification & Event Parsing
 
 ```php
+use Gowa\Sdk\Dto\EventPayload;
+use Gowa\Sdk\Dto\LiveLocationPayload;
+use Gowa\Sdk\Dto\PollPayload;
 use Gowa\Sdk\Security\WebhookSignature;
-use Gowa\Sdk\Webhook\WebhookParser;
-use Gowa\Sdk\Webhook\Event;
-use Gowa\Sdk\Webhook\Dto\IncomingMessage;
 use Gowa\Sdk\Webhook\Dto\IncomingAck;
+use Gowa\Sdk\Webhook\Dto\IncomingMessage;
+use Gowa\Sdk\Webhook\Event;
+use Gowa\Sdk\Webhook\WebhookParser;
 
 $payload = file_get_contents('php://input');
 $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';

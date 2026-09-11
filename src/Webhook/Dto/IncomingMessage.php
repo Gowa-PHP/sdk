@@ -237,11 +237,9 @@ final class IncomingMessage
         $target = is_string($type) ? MessageType::tryFromValue($type) : $type;
 
         $matches = match ($target) {
-            MessageType::Contact       => $this->isContact(),
-            MessageType::ContactsArray => $this->isContact(),
-            MessageType::Interactive   => $this->isInteractive(),
-            MessageType::List          => $this->isInteractive(),
-            default                    => $this->messageType() === $target,
+            MessageType::Interactive => $this->isInteractive(),
+            MessageType::List        => $this->isInteractive(),
+            default                  => $this->messageType() === $target,
         };
 
         if (! $matches) {
@@ -342,7 +340,7 @@ final class IncomingMessage
             MessageType::Order         => $this->order(),
             MessageType::Contact       => $this->contact(),
             MessageType::ContactsArray => $this->contacts(),
-            MessageType::Text          => $this->body ?? '',
+            MessageType::Text          => is_string($this->body) && $this->body !== '' ? $this->body : null,
             MessageType::Image,
             MessageType::Video,
             MessageType::VideoNote,
