@@ -152,7 +152,21 @@ if (!WebhookSignature::verify($payload, $signature, $secret)) {
 $parsed = WebhookParser::parse($payload);
 
 match ($parsed['event']) {
-    Event::Message => /** @var IncomingMessage $msg */ $msg = $parsed['data'],
+    Event::Message => {
+        /** @var IncomingMessage $msg */
+        $msg = $parsed['data'];
+
+        if ($msg->isLiveLocation()) {
+            $liveLoc = $msg->liveLocation();
+            echo "Coordinates: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
+        } elseif ($msg->isPoll()) {
+            $poll = $msg->poll();
+            echo "Poll question: {$poll->question}\n";
+        } elseif ($msg->isEvent()) {
+            $event = $msg->event();
+            echo "Event title: {$event->name}\n";
+        }
+    },
     Event::MessageAck => /** @var IncomingAck $ack */ $ack = $parsed['data'],
     default => null,
 };

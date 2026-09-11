@@ -15,6 +15,12 @@ enum Event: string
     case ChatPresence = 'chat_presence';
     case GroupParticipants = 'group.participants';
     case GroupJoined = 'group.joined';
+    case LabelEdit = 'label.edit';
+    case LabelAssociation = 'label.association';
+    case NewsletterJoined = 'newsletter.joined';
+    case NewsletterLeft = 'newsletter.left';
+    case NewsletterMessage = 'newsletter.message';
+    case NewsletterMute = 'newsletter.mute';
     case CallOffer = 'call.offer';
     case Unknown = 'unknown';
 

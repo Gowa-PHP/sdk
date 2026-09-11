@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Support for WhatsApp live location (`live_location`) incoming messages in `WebhookParser`.
+- Support for WhatsApp poll messages (`poll`), calendar event requests (`event`), catalog orders (`order`), contacts (`contact`, `contacts_array`), instant video notes (`video_note`), and interactive messages (`interactive`, `list`) in `IncomingMessage`.
+- DTOs: [`LiveLocationPayload`](file:///home/tupy/Projects/gowa-php/src/Dto/LiveLocationPayload.php), [`PollPayload`](file:///home/tupy/Projects/gowa-php/src/Dto/PollPayload.php), [`EventPayload`](file:///home/tupy/Projects/gowa-php/src/Dto/EventPayload.php), and [`OrderPayload`](file:///home/tupy/Projects/gowa-php/src/Dto/OrderPayload.php).
+- Factory methods `fromArray()` on [`LocationPayload`](file:///home/tupy/Projects/gowa-php/src/Dto/LocationPayload.php) and [`ContactCard`](file:///home/tupy/Projects/gowa-php/src/Dto/ContactCard.php).
+- Helper methods on [`IncomingMessage`](file:///home/tupy/Projects/gowa-php/src/Webhook/Dto/IncomingMessage.php): `isLocation()`, `isLiveLocation()`, `location()`, `liveLocation()`, `isPoll()`, `poll()`, `isEvent()`, `event()`, `isOrder()`, `order()`, `isContact()`, `contact()`, `contacts()`, `isInteractive()`, `isVideoNote()`, `isMedia()`.
+- Added missing GOWA webhook events to [`Event`](file:///home/tupy/Projects/gowa-php/src/Webhook/Event.php): `LabelEdit`, `LabelAssociation`, `NewsletterJoined`, `NewsletterLeft`, `NewsletterMessage`, `NewsletterMute`.
+
 ## [1.0.0] - 2026-08-29
 
 ### Added
