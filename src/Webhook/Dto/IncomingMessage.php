@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Gowa\Sdk\Webhook\Dto;
 
+use Closure;
 use Gowa\Sdk\Dto\ContactCard;
 use Gowa\Sdk\Dto\EventPayload;
 use Gowa\Sdk\Dto\LiveLocationPayload;
 use Gowa\Sdk\Dto\LocationPayload;
 use Gowa\Sdk\Dto\OrderPayload;
 use Gowa\Sdk\Dto\PollPayload;
+use Gowa\Sdk\Webhook\MessageType;
 
 final class IncomingMessage
 {
+    private bool $handled = false;
+
     /**
      * @param array<string, mixed> $raw
      */
@@ -212,6 +216,143 @@ final class IncomingMessage
     public function isMedia(): bool
     {
         return in_array($this->type, ['image', 'video', 'video_note', 'audio', 'document', 'sticker'], true);
+    }
+
+    public function isHandled(): bool
+    {
+        return $this->handled;
+    }
+
+    public function messageType(): MessageType
+    {
+        return MessageType::tryFromValue($this->type);
+    }
+
+    public function when(MessageType|string $type, Closure $handler): self
+    {
+        if ($this->handled) {
+            return $this;
+        }
+
+        $target = is_string($type) ? MessageType::tryFromValue($type) : $type;
+
+        $matches = match ($target) {
+            MessageType::Contact       => $this->isContact(),
+            MessageType::ContactsArray => $this->isContact(),
+            MessageType::Interactive   => $this->isInteractive(),
+            MessageType::List          => $this->isInteractive(),
+            default                    => $this->messageType() === $target,
+        };
+
+        if (! $matches) {
+            return $this;
+        }
+
+        $payload = $this->resolveTypePayload($target);
+
+        if ($payload !== null) {
+            $this->handled = true;
+            $handler($payload, $this);
+        }
+
+        return $this;
+    }
+
+    public function whenText(Closure $handler): self
+    {
+        return $this->when(MessageType::Text, $handler);
+    }
+
+    public function whenLiveLocation(Closure $handler): self
+    {
+        return $this->when(MessageType::LiveLocation, $handler);
+    }
+
+    public function whenLocation(Closure $handler): self
+    {
+        return $this->when(MessageType::Location, $handler);
+    }
+
+    public function whenPoll(Closure $handler): self
+    {
+        return $this->when(MessageType::Poll, $handler);
+    }
+
+    public function whenEvent(Closure $handler): self
+    {
+        return $this->when(MessageType::Event, $handler);
+    }
+
+    public function whenOrder(Closure $handler): self
+    {
+        return $this->when(MessageType::Order, $handler);
+    }
+
+    public function whenContact(Closure $handler): self
+    {
+        return $this->when(MessageType::Contact, $handler);
+    }
+
+    public function whenContacts(Closure $handler): self
+    {
+        return $this->when(MessageType::ContactsArray, $handler);
+    }
+
+    public function whenMedia(Closure $handler): self
+    {
+        if ($this->handled || ! $this->isMedia()) {
+            return $this;
+        }
+
+        $media = $this->mediaPayload();
+        $this->handled = true;
+        $handler($media, $this);
+
+        return $this;
+    }
+
+    public function otherwise(Closure $handler): self
+    {
+        if (! $this->handled) {
+            $this->handled = true;
+            $handler($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function mediaPayload(): array
+    {
+        $body = $this->payloadBody();
+        $media = $body[$this->type] ?? $this->raw[$this->type] ?? null;
+
+        return is_array($media) ? $media : [];
+    }
+
+    private function resolveTypePayload(MessageType $type): mixed
+    {
+        return match ($type) {
+            MessageType::LiveLocation  => $this->liveLocation(),
+            MessageType::Location      => $this->location(),
+            MessageType::Poll          => $this->poll(),
+            MessageType::Event         => $this->event(),
+            MessageType::Order         => $this->order(),
+            MessageType::Contact       => $this->contact(),
+            MessageType::ContactsArray => $this->contacts(),
+            MessageType::Text          => $this->body ?? '',
+            MessageType::Image,
+            MessageType::Video,
+            MessageType::VideoNote,
+            MessageType::Audio,
+            MessageType::Document,
+            MessageType::Sticker => $this->mediaPayload(),
+            MessageType::Interactive,
+            MessageType::List    => $this->payloadBody()[$this->type] ?? [],
+            MessageType::Unknown => $this,
+        };
     }
 
     /**
