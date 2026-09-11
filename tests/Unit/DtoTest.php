@@ -194,6 +194,12 @@ test('poll payload parses from array correctly', function () {
     expect(PollPayload::fromArray([]))->toBeNull();
     expect(PollPayload::fromArray(['question' => 123]))->toBeNull();
     expect(PollPayload::fromArray(['poll_id' => []]))->toBeNull();
+
+    $voteWithHashesOnly = PollPayload::fromArray([
+        'selected_option_hashes' => ['hash_sushi'],
+    ]);
+    expect($voteWithHashesOnly)->not->toBeNull();
+    expect($voteWithHashesOnly->selectedOptionHashes)->toBe(['hash_sushi']);
 });
 
 test('event payload parses from array correctly', function () {

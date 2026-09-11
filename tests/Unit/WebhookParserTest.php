@@ -197,6 +197,28 @@ test('parses poll message correctly', function () {
     expect($poll->options)->toHaveCount(2);
 });
 
+test('returns null when poll payload contains invalid fields', function () {
+    $payload = [
+        'event'     => 'message',
+        'device_id' => '628123456789@s.whatsapp.net',
+        'payload'   => [
+            'id'      => 'POLL_MSG_INVALID',
+            'chat_id' => '5511999998888@s.whatsapp.net',
+            'poll'    => [
+                'question' => 123,
+            ],
+        ],
+    ];
+
+    $parsed = WebhookParser::parse($payload);
+    /** @var IncomingMessage $msg */
+    $msg = $parsed['data'];
+
+    expect($msg->type)->toBe('poll');
+    expect($msg->isPoll())->toBeTrue();
+    expect($msg->poll())->toBeNull();
+});
+
 test('parses event message correctly in 1:1 or group chat', function () {
     $payload = [
         'event'     => 'message',

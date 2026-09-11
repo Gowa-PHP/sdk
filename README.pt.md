@@ -157,13 +157,19 @@ if ($parsed['event'] === Event::Message) {
 
     if ($msg->isLiveLocation()) {
         $liveLoc = $msg->liveLocation();
-        echo "Coordenadas: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
+        if ($liveLoc !== null) {
+            echo "Coordenadas: {$liveLoc->latitude}, {$liveLoc->longitude}\n";
+        }
     } elseif ($msg->isPoll()) {
         $poll = $msg->poll();
-        echo "Pergunta da enquete: {$poll->question}\n";
+        if ($poll !== null) {
+            echo "Pergunta da enquete: {$poll->question}\n";
+        }
     } elseif ($msg->isEvent()) {
         $event = $msg->event();
-        echo "Título do evento: {$event->name}\n";
+        if ($event !== null) {
+            echo "Título do evento: {$event->name}\n";
+        }
     }
 } elseif ($parsed['event'] === Event::MessageAck) {
     /** @var IncomingAck $ack */

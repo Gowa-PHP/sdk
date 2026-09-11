@@ -44,7 +44,7 @@ final class PollPayload
             ? array_values(array_map('strval', $data['selected_option_hashes']))
             : [];
 
-        if ($question === null && $pollId === null && $options === [] && $selectedOptions === []) {
+        if ($question === null && $pollId === null && $options === [] && $selectedOptions === [] && $selectedHashes === []) {
             return null;
         }
 
