@@ -81,3 +81,26 @@ test('GowaClient maintains custom GuzzleClient injection for backwards compatibi
     $lastRequest = $mockHandler->getLastRequest();
     expect($lastRequest->getHeaderLine('X-Custom-Header'))->toBe('CustomValue');
 });
+
+test('GowaClient wraps raw callable handler with HandlerStack', function () {
+    $called = false;
+    $rawHandler = function ($request, $options) use (&$called) {
+        $called = true;
+        return new \GuzzleHttp\Promise\FulfilledPromise(
+            new Response(200, [], json_encode(['code' => 'SUCCESS', 'results' => ['id' => 'dev-raw']])),
+        );
+    };
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+
+    $client = new GowaClient($config, handler: $rawHandler);
+    $device = $client->device('dev-raw');
+
+    expect($called)->toBeTrue();
+    expect($device)->not->toBeNull();
+    expect($device->deviceId)->toBe('dev-raw');
+});

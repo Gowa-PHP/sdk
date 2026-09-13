@@ -271,7 +271,7 @@ try {
     $client->sendText('meu-device-id', '5511999998888', 'Olá');
 } catch (GowaUnreachableException $e) {
     // Falha de rede, timeout de conexão, erro de DNS ou servidor inalcançável
-    // Seguro para retentar imediatamente ou colocar em fila para retry em background
+    // Reconcilie o status de entrega antes de retentar operações não-idempotentes (como envio de mensagens)
 } catch (MediaUnavailableException $e) {
     // Recusa permanente de download de mídia (ex: mensagem sem mídia ou formato não suportado)
 } catch (GowaRequestException $e) {
@@ -291,8 +291,8 @@ try {
 - **Responsabilidade de quem chama**: O `$deviceId` **deve sempre vir do armazenamento seguro da aplicação** (ex: model do banco de dados) e **nunca diretamente de entrada não-confiável do usuário ou parâmetros da requisição**.
 - **Endpoints sem escopo**: Endpoints de leitura ampla (`/chats`, `/user/my/contacts`, `/user/my/groups`) não possuem escopo por aparelho no servidor GOWA e misturam dados de todos os números conectados. Evite utilizá-los quando for necessário isolamento estrito entre números/tenants.
 
-### Validação Anti-SSRF
-Qualquer URL de mídia ou imagem de QR code obtida via `downloadMedia()` ou `fetchQrImage()` é rigidamente validada com `GowaHost::assertBelongsToServer()`, garantindo que requisições só atinjam o servidor GOWA configurado, evitando ataques de SSRF e vazamento de credenciais.
+### Validação Anti-SSRF e Proteção contra Redirecionamentos
+Qualquer URL de mídia ou imagem de QR code obtida via `downloadMedia()` ou `fetchQrImage()` é rigidamente validada com `GowaHost::assertBelongsToServer()`, garantindo que requisições só atinjam o servidor GOWA configurado. Além disso, redirecionamentos HTTP automáticos são explicitamente desabilitados (`allow_redirects: false`) para impedir que redirecionamentos não validados escapem do host configurado, prevenindo ataques de SSRF e vazamento de credenciais.
 
 ## Executando os Testes (Pest PHP)
 

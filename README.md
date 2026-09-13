@@ -271,7 +271,7 @@ try {
     $client->sendText('my-device-id', '5511999998888', 'Hello');
 } catch (GowaUnreachableException $e) {
     // Network failure, connection timeout, DNS failure, or server unreachable
-    // Safe to retry or queue for background retry
+    // Reconcile delivery status before retrying non-idempotent operations (such as sending messages)
 } catch (MediaUnavailableException $e) {
     // Permanent media download refusal (e.g. message does not contain media or unsupported format)
 } catch (GowaRequestException $e) {
@@ -291,8 +291,8 @@ try {
 - **Caller responsibility**: The `$deviceId` **must always originate from trusted server storage** (e.g. your database model) and **never directly from unvalidated user input or request parameters**.
 - **Un-scoped endpoints**: Broad reading endpoints (`/chats`, `/user/my/contacts`, `/user/my/groups`) are not scoped per device on the GOWA server and return mixed data across all paired numbers. Avoid relying on them for tenant-isolated data.
 
-### Anti-SSRF Validation
-Any media or QR image URL fetched through `downloadMedia()` or `fetchQrImage()` is strictly validated via `GowaHost::assertBelongsToServer()` to ensure requests only target the configured GOWA server, preventing SSRF attacks and credential leaks.
+### Anti-SSRF Validation & Redirect Protection
+Any media or QR image URL fetched through `downloadMedia()` or `fetchQrImage()` is strictly validated via `GowaHost::assertBelongsToServer()` to ensure requests only target the configured GOWA server. Furthermore, automatic HTTP redirects are explicitly disabled (`allow_redirects: false`) to prevent unvalidated redirects from escaping the configured host, protecting against SSRF attacks and credential leaks.
 
 ## Running Tests (Pest PHP)
 

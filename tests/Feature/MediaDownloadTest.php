@@ -224,3 +224,91 @@ test('downloadMedia enforces GowaHost::assertBelongsToServer before request', fu
     expect(fn() => $client->downloadMedia('https://malicious-server.com/steal-creds', '/tmp/target'))
         ->toThrow(GowaSecurityException::class);
 });
+
+test('describeMedia rejects empty phone candidate input', function (mixed $invalidPhones) {
+    $client = createMockGowaClient([]);
+
+    expect(fn() => $client->describeMedia('dev-1', $invalidPhones, 'WAMID_1'))
+        ->toThrow(InvalidArgumentException::class, 'At least one phone candidate must be provided.');
+})->with([
+    '',
+    '   ',
+    [[]],
+    [['', '   ']],
+]);
+
+test('describeMedia trims candidate phones in request', function () {
+    $mockHandler = new MockHandler([
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'results' => [
+                'file_path' => '/storage/media/trimmed',
+                'file_size' => 100,
+            ],
+        ])),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    $media = $client->describeMedia('dev-1', '  5511999998888  ', 'WAMID_1');
+    expect($media)->not->toBeNull();
+
+    $lastRequest = $mockHandler->getLastRequest();
+    expect($lastRequest->getUri()->getQuery())->toContain('phone=5511999998888%40s.whatsapp.net');
+});
+
+test('describeMedia aborts immediately and does not fallback on 500 server error', function () {
+    $mockHandler = new MockHandler([
+        // 1st candidate returns 500
+        new Response(500, [], json_encode([
+            'code'    => 'SERVER_ERROR',
+            'message' => 'database connection failure',
+        ])),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    expect(fn() => $client->describeMedia('dev-1', ['5511111111111', '5511222222222'], 'WAMID_1'))
+        ->toThrow(GowaRequestException::class, 'database connection failure');
+
+    expect($mockHandler->count())->toBe(0);
+});
+
+test('fetchQrImage and downloadMedia disable redirects for anti-SSRF protection', function () {
+    $mockHandler = new MockHandler([
+        new Response(200, ['Content-Type' => 'image/png'], 'qr-bytes'),
+        new Response(200, [], 'media-bytes'),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    $client->fetchQrImage('https://gowa.example.com/qr/dev-1');
+    $qrOptions = $mockHandler->getLastOptions();
+    expect($qrOptions['allow_redirects'] ?? null)->toBeFalse();
+
+    $tempFile = tempnam(sys_get_temp_dir(), 'gowa_qr_');
+    try {
+        $client->downloadMedia('https://gowa.example.com/media/file.mp4', $tempFile);
+        $mediaOptions = $mockHandler->getLastOptions();
+        expect($mediaOptions['allow_redirects'] ?? null)->toBeFalse();
+    } finally {
+        if (file_exists($tempFile)) {
+            @unlink($tempFile);
+        }
+    }
+});

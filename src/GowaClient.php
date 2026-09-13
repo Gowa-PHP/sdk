@@ -22,6 +22,7 @@ use Gowa\Sdk\Exceptions\UnsupportedOperationException;
 use Gowa\Sdk\Security\GowaHost;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Utils;
 use InvalidArgumentException;
 
@@ -64,7 +65,7 @@ class GowaClient
             ];
 
             if ($handler !== null) {
-                $options['handler'] = $handler;
+                $options['handler'] = $handler instanceof HandlerStack ? $handler : HandlerStack::create($handler);
             }
 
             $this->http = new GuzzleClient($options);
@@ -205,7 +206,8 @@ class GowaClient
 
         try {
             $res = $this->http->get($qrLink, [
-                'http_errors' => false,
+                'http_errors'     => false,
+                'allow_redirects' => false,
             ]);
         } catch (GuzzleException $e) {
             throw new GowaUnreachableException("Failed to download QR code image: {$e->getMessage()}", 0, $e);
@@ -656,9 +658,13 @@ class GowaClient
     {
         self::assertValidDeviceId($deviceId);
 
-        $phoneList = is_array($phones)
-            ? array_values(array_filter($phones, fn($p) => is_string($p) && trim($p) !== ''))
-            : [trim($phones)];
+        $phoneList = array_values(array_filter(
+            array_map(
+                static fn(mixed $phone): string => is_string($phone) ? trim($phone) : '',
+                is_array($phones) ? $phones : [$phones],
+            ),
+            static fn(string $phone): bool => $phone !== '',
+        ));
 
         if (empty($phoneList)) {
             throw new InvalidArgumentException('At least one phone candidate must be provided.');
@@ -703,6 +709,8 @@ class GowaClient
             if ($statusCode >= 200 && $statusCode < 300 && $code === 'SUCCESS') {
                 break;
             }
+
+            $this->results($response, 'prepare media');
         }
 
         /** @var array{status_code: int, body: array<string, mixed>, raw_body?: string} $lastResponse */
@@ -732,8 +740,9 @@ class GowaClient
         GowaHost::assertBelongsToServer($mediaUrl, $this->config->baseUrl);
 
         $options = [
-            'sink'        => $destinationPath,
-            'http_errors' => false,
+            'sink'            => $destinationPath,
+            'http_errors'     => false,
+            'allow_redirects' => false,
         ];
 
         if ($timeout !== null) {
