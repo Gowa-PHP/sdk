@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Structured exception `GowaUnreachableException extends GowaRequestException` for network/transport failures, connection refused, DNS errors, and timeouts.
+- Structured exception `MediaUnavailableException extends GowaRequestException` for permanent media download refusals (not found, does not contain media, unsupported media type).
+- `statusCode`, `gowaCode`, and `gowaMessage` properties (and getters) on `GowaRequestException`.
+- Optional `?callable $handler = null` parameter in `GowaClient::__construct()` allowing custom Guzzle handler injection (e.g. Laravel `Http::fake()` HandlerStack or Pest MockHandler) while retaining baseUrl, basic auth, timeout, and default headers.
+- Support for ordered candidate phones (`string|list<string> $phones`) in `describeMedia()` to resolve outbound echo media stored under the device JID versus contact JID.
+- Dedicated `?int $timeout = null` parameter in `downloadMedia()` for overriding client-level timeout during large media downloads.
+- Automatic deletion of partial sink files and extraction of up to 2KB response bodies on HTTP 4xx or network failure in `downloadMedia()`.
+- Pre-request validation for all `$deviceId` parameters rejecting empty or whitespace-only strings with `InvalidArgumentException`.
+
+### Changed
+- **Breaking**: `WebhookSignature::verify()` now strictly requires the `sha256=` signature prefix matching the GOWA multidevice server's `X-Hub-Signature-256: sha256=<hex>` format. Signatures without prefix return `false`.
+- **Breaking**: `IncomingMessage::fromPayload()` no longer falls back to `from` when `chat_id` is absent; payloads lacking `chat_id` return `null`, preventing outbound echoes from opening conversations with the store itself.
+- Guzzle HTTP client switched to `http_errors => false` so `results()` extracts exact server error codes and validation messages (e.g. `400 VALIDATION_ERROR ...`) or non-JSON 2KB snippets instead of truncated Guzzle exceptions.
+- `avatar()` only returns `null` for legitimate absence of photos (404, non-SUCCESS code, empty results or missing URL). Connection failures throw `GowaUnreachableException` and 5xx server errors throw `GowaRequestException`.
+- `device()` checks status code 404 directly instead of substring inspection.
+- `updateWebhook()` now correctly sends `X-Device-Id` as an HTTP header instead of a query parameter.
 - Fluent webhook event dispatcher `WebhookEvent` with `when()`, `onMessage()`, `onAck()`, `onReaction()`, and `otherwise()` (implementing `ArrayAccess` for 100% backwards compatibility with array indexing).
 - Enum `MessageType` covering all WhatsApp message types with safe fallback to `MessageType::Unknown`.
 - Fluent message routing on `IncomingMessage` with `when()`, `whenText()`, `whenLiveLocation()`, `whenLocation()`, `whenPoll()`, `whenEvent()`, `whenOrder()`, `whenContact()`, `whenContacts()`, `whenMedia()`, and `otherwise()`.

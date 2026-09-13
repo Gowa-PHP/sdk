@@ -381,3 +381,44 @@ test('parses label and newsletter events correctly', function () {
     expect(Event::tryFromValue('newsletter.message'))->toBe(Event::NewsletterMessage);
     expect(Event::tryFromValue('newsletter.mute'))->toBe(Event::NewsletterMute);
 });
+
+test('echo message without chat_id returns null from fromPayload', function () {
+    $payload = [
+        'event'   => 'message',
+        'payload' => [
+            'id'         => 'ECHO_MSG_WITHOUT_CHAT_ID',
+            'from'       => '5511888888888@s.whatsapp.net', // store owner phone
+            'is_from_me' => true,
+            'body'       => 'Message sent from store phone',
+        ],
+    ];
+
+    $parsed = WebhookParser::parse($payload);
+    expect($parsed['data'])->toBeNull();
+
+    $dto = IncomingMessage::fromPayload($payload);
+    expect($dto)->toBeNull();
+});
+
+test('echo message with chat_id sets phone to contact and not from phone', function () {
+    $payload = [
+        'event'   => 'message',
+        'payload' => [
+            'id'         => 'ECHO_MSG_WITH_CHAT_ID',
+            'from'       => '5511888888888@s.whatsapp.net', // store owner phone
+            'chat_id'    => '5511999991234@s.whatsapp.net', // client/contact phone
+            'is_from_me' => true,
+            'body'       => 'Hello client!',
+        ],
+    ];
+
+    $parsed = WebhookParser::parse($payload);
+    expect($parsed['data'])->toBeInstanceOf(IncomingMessage::class);
+
+    /** @var IncomingMessage $msg */
+    $msg = $parsed['data'];
+    expect($msg->isEcho)->toBeTrue();
+    expect($msg->chatId)->toBe('5511999991234@s.whatsapp.net');
+    expect($msg->phone)->toBe('5511999991234');
+    expect($msg->phone)->not->toBe('5511888888888');
+});
