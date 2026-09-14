@@ -8,6 +8,7 @@ use Gowa\Sdk\Dto\MediaPayload;
 use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
 use Gowa\Sdk\Dto\SentMessage;
+use Gowa\Sdk\Exceptions\GowaRequestException;
 use Gowa\Sdk\Exceptions\UnsupportedMediaException;
 use GuzzleHttp\Psr7\Response;
 
@@ -84,6 +85,34 @@ test('markRead sends read confirmation', function () {
 
     expect(fn() => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123'))
         ->not->toThrow(Exception::class);
+});
+
+test('markRead withTyping sends presence and confirms read', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'results' => [],
+        ])),
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'results' => [],
+        ])),
+    ]);
+
+    expect(fn() => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123', withTyping: true))
+        ->not->toThrow(Exception::class);
+});
+
+test('markRead withTyping throws when presence request fails', function () {
+    $client = createMockGowaClient([
+        new Response(500, [], json_encode([
+            'code'    => 'SERVER_ERROR',
+            'message' => 'failed to start presence',
+        ])),
+    ]);
+
+    expect(fn() => $client->markRead('device-uuid-1', '5511999998888', 'WAMID_123', withTyping: true))
+        ->toThrow(GowaRequestException::class, 'failed to start presence');
 });
 
 test('forwardMessage forwards message', function () {

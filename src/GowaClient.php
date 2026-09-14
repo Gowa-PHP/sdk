@@ -214,7 +214,7 @@ class GowaClient
         }
 
         $statusCode = $res->getStatusCode();
-        if ($statusCode >= 400) {
+        if ($statusCode < 200 || $statusCode >= 300) {
             $rawBody = (string) $res->getBody();
             $snippet = substr($rawBody, 0, 2048);
             $errorMessage = $snippet !== ''
@@ -635,10 +635,12 @@ class GowaClient
         self::assertValidDeviceId($deviceId);
 
         if ($withTyping) {
-            $this->post('/send/chat-presence', [
+            $presenceResponse = $this->post('/send/chat-presence', [
                 'phone'  => self::jid($to),
                 'action' => 'start',
             ], [], ['X-Device-Id' => $deviceId]);
+
+            $this->results($presenceResponse, 'start chat presence');
         }
 
         $response = $this->post("/message/{$providerMessageId}/read", [
@@ -757,7 +759,7 @@ class GowaClient
 
         $statusCode = $response->getStatusCode();
 
-        if ($statusCode >= 400) {
+        if ($statusCode < 200 || $statusCode >= 300) {
             $body = is_file($destinationPath)
                 ? (string) file_get_contents($destinationPath, false, null, 0, 2048)
                 : '';

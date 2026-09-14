@@ -312,3 +312,45 @@ test('fetchQrImage and downloadMedia disable redirects for anti-SSRF protection'
         }
     }
 });
+
+test('fetchQrImage rejects 3xx redirect responses with GowaRequestException', function () {
+    $mockHandler = new MockHandler([
+        new Response(302, ['Location' => 'https://other.com'], 'Redirecting'),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    expect(fn() => $client->fetchQrImage('https://gowa.example.com/qr/dev-1'))
+        ->toThrow(GowaRequestException::class, 'gowa refused fetch QR image: 302');
+});
+
+test('downloadMedia deletes partial file and rejects 3xx redirect responses with GowaRequestException', function () {
+    $mockHandler = new MockHandler([
+        new Response(301, ['Location' => 'https://other.com'], 'Moved Permanently'),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    $tempFile = tempnam(sys_get_temp_dir(), 'gowa_redirect_');
+
+    try {
+        expect(fn() => $client->downloadMedia('https://gowa.example.com/media/file.mp4', $tempFile))
+            ->toThrow(GowaRequestException::class, 'gowa refused to deliver media: 301');
+
+        expect(file_exists($tempFile))->toBeFalse();
+    } finally {
+        if (file_exists($tempFile)) {
+            @unlink($tempFile);
+        }
+    }
+});
