@@ -41,7 +41,7 @@ final class IncomingMessage
     {
         $body = (array) ($payload['payload'] ?? $payload);
         $id = (string) ($body['id'] ?? '');
-        $chat = (string) ($body['chat_id'] ?? $body['from'] ?? '');
+        $chat = (string) ($body['chat_id'] ?? '');
 
         if ($id === '' || $chat === '') {
             return null;

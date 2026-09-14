@@ -58,6 +58,9 @@ $config = new Config(
 );
 
 $client = new GowaClient($config);
+
+// Ou injete um handler customizado do Guzzle (ex: para testes ou HandlerStack do Http::fake() do Laravel) sem perder as opções do Config:
+// $client = new GowaClient($config, handler: $customHandler);
 ```
 
 ### 2. Pareamento de Aparelho (QR Code ou Código de 8 Dígitos)
@@ -129,6 +132,32 @@ $client->revokeMessage('minha-instancia-uuid', '5511999998888', 'WAMID_ORIGINAL_
 $client->starMessage('minha-instancia-uuid', '5511999998888', 'WAMID_ORIGINAL_123', true);
 ```
 
+#### Download de Mídias (Candidatos de Telefone para Eco, Timeout e Limpeza)
+```php
+use Gowa\Sdk\Exceptions\MediaUnavailableException;
+
+// 1. Consultar mídia com telefones candidatos (ex: eco de saída do vendedor vs contato)
+try {
+    $remoteMedia = $client->describeMedia(
+        deviceId: 'minha-instancia-uuid',
+        phones: ['5511888888888', '5511999999999'], // testa os candidatos na ordem
+        providerMessageId: 'WAMID_ORIGINAL_123'
+    );
+} catch (MediaUnavailableException $e) {
+    // Recusa permanente da mídia (ex: mensagem sem mídia ou formato não suportado)
+    $remoteMedia = null;
+}
+
+// 2. Baixar os bytes descriptografados com timeout dedicado
+if ($remoteMedia !== null) {
+    $client->downloadMedia(
+        mediaUrl: $remoteMedia->url,
+        destinationPath: '/caminho/para/arquivo.mp4',
+        timeout: 120 // timeout dedicado para downloads grandes
+    );
+}
+```
+
 ### 4. Validação de Webhooks & Parse de Eventos
 
 ```php
@@ -142,10 +171,11 @@ use Gowa\Sdk\Webhook\Event;
 use Gowa\Sdk\Webhook\WebhookParser;
 
 $payload = file_get_contents('php://input');
+// O servidor GOWA envia o cabeçalho no formato "sha256=<hex>"
 $signature = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
 $secret = 'minha_chave_hmac_48_chars';
 
-// 1. Validar assinatura HMAC SHA-256
+// 1. Validar assinatura HMAC SHA-256 (exige o prefixo "sha256=")
 if (!WebhookSignature::verify($payload, $signature, $secret)) {
     http_response_code(401);
     exit('Assinatura inválida');
@@ -227,6 +257,42 @@ WebhookParser::parse($payload)
 | Foto de Perfil do Contato | `avatar()` | `GET /user/avatar` |
 | Preparar Download de Mídia | `describeMedia()` | `GET /message/:id/download` |
 | Baixar Mídia Descriptografada | `downloadMedia()` | GET URL da mídia |
+
+## Tratamento de Erros
+
+O SDK fornece exceções estruturadas para diferenciar claramente falhas de conectividade/transporte, recusas permanentes de download de mídia e respostas de erro/validação do servidor:
+
+```php
+use Gowa\Sdk\Exceptions\GowaRequestException;
+use Gowa\Sdk\Exceptions\GowaUnreachableException;
+use Gowa\Sdk\Exceptions\MediaUnavailableException;
+
+try {
+    $client->sendText('meu-device-id', '5511999998888', 'Olá');
+} catch (GowaUnreachableException $e) {
+    // Falha de rede, timeout de conexão, erro de DNS ou servidor inalcançável
+    // Reconcilie o status de entrega antes de retentar operações não-idempotentes (como envio de mensagens)
+} catch (MediaUnavailableException $e) {
+    // Recusa permanente de download de mídia (ex: mensagem sem mídia ou formato não suportado)
+} catch (GowaRequestException $e) {
+    // O servidor respondeu com recusa (status 4xx/5xx ou code != SUCCESS)
+    $status = $e->statusCode;    // ex: 400
+    $code = $e->gowaCode;        // ex: "VALIDATION_ERROR"
+    $message = $e->gowaMessage;  // ex: "your audio type is not allowed..."
+}
+```
+
+## 🔒 Segurança e Considerações de Multi-Tenancy
+
+### Isolamento de Tenants e Escopo por Aparelho
+- **O GOWA não isola tenants no nível da API**: Uma única credencial Basic Auth tem acesso a todos os aparelhos conectados no servidor.
+- **Escopo por `deviceId`**: Toda operação específica de aparelho deve declarar seu `$deviceId`. Um identificador ausente, vazio ou inválido faria a requisição ser executada pelo aparelho que o servidor escolhesse arbitrariamente.
+- **Validação**: Todos os métodos que recebem `$deviceId` rejeitam strings vazias ou compostas apenas por espaços com `InvalidArgumentException` antes de enviar qualquer requisição HTTP.
+- **Responsabilidade de quem chama**: O `$deviceId` **deve sempre vir do armazenamento seguro da aplicação** (ex: model do banco de dados) e **nunca diretamente de entrada não-confiável do usuário ou parâmetros da requisição**.
+- **Endpoints sem escopo**: Endpoints de leitura ampla (`/chats`, `/user/my/contacts`, `/user/my/groups`) não possuem escopo por aparelho no servidor GOWA e misturam dados de todos os números conectados. Evite utilizá-los quando for necessário isolamento estrito entre números/tenants.
+
+### Validação Anti-SSRF e Proteção contra Redirecionamentos
+Qualquer URL de mídia ou imagem de QR code obtida via `downloadMedia()` ou `fetchQrImage()` é rigidamente validada com `GowaHost::assertBelongsToServer()`, garantindo que requisições só atinjam o servidor GOWA configurado. Além disso, redirecionamentos HTTP automáticos são explicitamente desabilitados (`allow_redirects: false`) para impedir que redirecionamentos não validados escapem do host configurado, prevenindo ataques de SSRF e vazamento de credenciais.
 
 ## Executando os Testes (Pest PHP)
 
