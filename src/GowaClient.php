@@ -671,6 +671,7 @@ class GowaClient
         }
 
         $lastResponse = null;
+        $results = null;
 
         foreach ($phoneList as $phone) {
             $response = $this->get("/message/{$providerMessageId}/download", [
@@ -704,17 +705,12 @@ class GowaClient
                 );
             }
 
-            $code = is_array($body) ? (string) ($body['code'] ?? '') : '';
-
-            if ($statusCode >= 200 && $statusCode < 300 && $code === 'SUCCESS') {
-                break;
-            }
-
-            $this->results($response, 'prepare media');
+            $results = $this->results($response, 'prepare media');
+            break;
         }
 
-        /** @var array{status_code: int, body: array<string, mixed>, raw_body?: string} $lastResponse */
-        $results = $this->results($lastResponse, 'prepare media');
+        /** @var array<string, mixed> $results */
+        $results ??= $this->results($lastResponse ?? [], 'prepare media');
 
         $url = (string) ($results['file_path'] ?? $results['file_url'] ?? '');
 
