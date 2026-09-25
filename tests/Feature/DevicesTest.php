@@ -101,6 +101,36 @@ test('updateWebhook sends X-Device-Id as header and not as query parameter', fun
     expect($lastRequest->getUri()->getQuery())->not->toContain('X-Device-Id');
 });
 
+test('device methods send raw deviceId in headers and body while encoding URL path segments', function () {
+    $mockHandler = new MockHandler([
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'results' => ['id' => 'loja 1', 'name' => 'Loja 1'],
+        ])),
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'results' => ['device_id' => 'loja 1'],
+        ])),
+    ]);
+
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    $client->createDevice(' loja 1 ', 'https://app.com/wh', 'sec', ['message']);
+    $createReq = $mockHandler->getLastRequest();
+    $createBody = json_decode((string) $createReq->getBody(), true);
+    expect($createBody['device_id'])->toBe('loja 1');
+
+    $client->updateWebhook(' loja 1 ', 'https://app.com/wh2');
+    $updateReq = $mockHandler->getLastRequest();
+    expect($updateReq->getHeaderLine('X-Device-Id'))->toBe('loja 1')
+        ->and($updateReq->getUri()->getPath())->toBe('/devices/loja%201/webhook');
+});
+
 test('device queries device state and returns Device DTO', function () {
     $client = createMockGowaClient([
         new Response(200, [], json_encode([

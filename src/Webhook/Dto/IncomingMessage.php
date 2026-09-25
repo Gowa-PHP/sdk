@@ -63,13 +63,13 @@ final class IncomingMessage
         ];
         $referral = null;
         foreach ($referralCandidates as $candidate) {
-            if (is_array($candidate) && $candidate !== []) {
+            if (is_array($candidate) && $candidate !== [] && ! array_is_list($candidate)) {
                 $referral = $candidate;
                 break;
             }
             if (is_string($candidate) && trim($candidate) !== '') {
                 $decoded = json_decode($candidate, true);
-                if (is_array($decoded) && $decoded !== []) {
+                if (is_array($decoded) && $decoded !== [] && ! array_is_list($decoded)) {
                     $referral = $decoded;
                     break;
                 }

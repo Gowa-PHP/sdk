@@ -500,4 +500,44 @@ test('parses message with referral metadata from json string or array', function
 
     expect($msg4->isReferral())->toBeTrue()
         ->and($msg4->referral())->toBe(['ctwa_clid' => 'fallback_ctwa_789']);
+
+    $payloadListFallback = [
+        'event'   => 'message',
+        'payload' => [
+            'id'                => 'LIST_FALLBACK_MSG',
+            'chat_id'           => '5511999991234@s.whatsapp.net',
+            'body'              => 'List fallback test',
+            'referral_metadata' => ['invalido_item_1', 'invalido_item_2'],
+            'referral'          => [
+                'ctwa_clid' => 'valid_assoc_123',
+            ],
+        ],
+    ];
+
+    $parsed5 = WebhookParser::parse($payloadListFallback);
+    /** @var IncomingMessage $msg5 */
+    $msg5 = $parsed5['data'];
+
+    expect($msg5->isReferral())->toBeTrue()
+        ->and($msg5->referral())->toBe(['ctwa_clid' => 'valid_assoc_123']);
+
+    $payloadJsonListFallback = [
+        'event'   => 'message',
+        'payload' => [
+            'id'                => 'JSON_LIST_FALLBACK_MSG',
+            'chat_id'           => '5511999991234@s.whatsapp.net',
+            'body'              => 'JSON list fallback test',
+            'referral_metadata' => '["invalido", 123]',
+            'referral'          => [
+                'ctwa_clid' => 'valid_json_assoc_456',
+            ],
+        ],
+    ];
+
+    $parsed6 = WebhookParser::parse($payloadJsonListFallback);
+    /** @var IncomingMessage $msg6 */
+    $msg6 = $parsed6['data'];
+
+    expect($msg6->isReferral())->toBeTrue()
+        ->and($msg6->referral())->toBe(['ctwa_clid' => 'valid_json_assoc_456']);
 });

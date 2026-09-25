@@ -97,10 +97,10 @@ class GowaClient
         array $events,
         bool $insecureSkipVerify = false,
     ): Device {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
 
         $response = $this->post('/devices', [
-            'device_id'                    => $deviceId,
+            'device_id'                    => $devId,
             'webhook_url'                  => $webhookUrl,
             'webhook_secret'               => $webhookSecret,
             'webhook_events'               => implode(',', $events),
@@ -139,8 +139,9 @@ class GowaClient
         }
 
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->patch("/devices/{$devId}/webhook", $payload, [], [
+        $response = $this->patch("/devices/{$encodedDevId}/webhook", $payload, [], [
             'X-Device-Id' => $devId,
         ]);
 
@@ -153,8 +154,9 @@ class GowaClient
     public function startQrPairing(string $deviceId): Pairing
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->get("/devices/{$devId}/login");
+        $response = $this->get("/devices/{$encodedDevId}/login");
 
         return Pairing::fromQr($this->results($response, 'start qr pairing'));
     }
@@ -165,8 +167,9 @@ class GowaClient
     public function startCodePairing(string $deviceId, string $phone): Pairing
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->post("/devices/{$devId}/login/code", [], [
+        $response = $this->post("/devices/{$encodedDevId}/login/code", [], [
             'phone' => $phone,
         ]);
 
@@ -179,8 +182,9 @@ class GowaClient
     public function device(string $deviceId): ?Device
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->get("/devices/{$devId}");
+        $response = $this->get("/devices/{$encodedDevId}");
 
         if ($response['status_code'] === 404) {
             return null;
@@ -195,8 +199,9 @@ class GowaClient
     public function logout(string $deviceId): void
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->post("/devices/{$devId}/logout");
+        $response = $this->post("/devices/{$encodedDevId}/logout");
         $this->results($response, 'logout device');
     }
 
@@ -236,8 +241,9 @@ class GowaClient
     public function deleteDevice(string $deviceId): void
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->delete("/devices/{$devId}");
+        $response = $this->delete("/devices/{$encodedDevId}");
         $this->results($response, 'delete device');
     }
 
@@ -247,8 +253,9 @@ class GowaClient
     public function reconnectDevice(string $deviceId): void
     {
         $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->post("/devices/{$devId}/reconnect");
+        $response = $this->post("/devices/{$encodedDevId}/reconnect");
         $this->results($response, 'reconnect device');
     }
 
@@ -1060,9 +1067,9 @@ class GowaClient
     }
 
     /**
-     * Validate and encode a URL path segment to prevent path traversal and injection.
+     * Validate a path or header identifier to prevent path traversal and injection.
      */
-    private static function segment(string $value, string $name = 'Identifier'): string
+    private static function validSegment(string $value, string $name = 'Identifier'): string
     {
         $trimmed = trim($value);
         if ($trimmed === '') {
@@ -1073,12 +1080,20 @@ class GowaClient
             throw new InvalidArgumentException("{$name} contains invalid path characters.");
         }
 
-        return rawurlencode($trimmed);
+        return $trimmed;
+    }
+
+    /**
+     * Validate and encode a URL path segment to prevent path traversal and injection.
+     */
+    private static function segment(string $value, string $name = 'Identifier'): string
+    {
+        return rawurlencode(self::validSegment($value, $name));
     }
 
     private static function assertValidDeviceId(string $deviceId): string
     {
-        return self::segment($deviceId, 'Device ID');
+        return self::validSegment($deviceId, 'Device ID');
     }
 
     private static function assertValidScheduleId(string $scheduleId): string
