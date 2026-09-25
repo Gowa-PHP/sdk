@@ -32,6 +32,7 @@ final class IncomingMessage
         public readonly ?string $timestamp = null,
         public readonly bool $isGroup = false,
         public readonly array $raw = [],
+        public readonly ?array $referral = null,
     ) {}
 
     /**
@@ -54,6 +55,27 @@ final class IncomingMessage
         $type = self::extractType($body);
         $text = self::extractBody($body, $type);
 
+        $referralCandidates = [
+            $body['referral_metadata'] ?? null,
+            $body['referral'] ?? null,
+            $payload['referral_metadata'] ?? null,
+            $payload['referral'] ?? null,
+        ];
+        $referral = null;
+        foreach ($referralCandidates as $candidate) {
+            if (is_array($candidate) && $candidate !== []) {
+                $referral = $candidate;
+                break;
+            }
+            if (is_string($candidate) && trim($candidate) !== '') {
+                $decoded = json_decode($candidate, true);
+                if (is_array($decoded) && $decoded !== []) {
+                    $referral = $decoded;
+                    break;
+                }
+            }
+        }
+
         return new self(
             id: $id,
             chatId: $chat,
@@ -65,6 +87,7 @@ final class IncomingMessage
             quotedMessageId: is_string($body['replied_to_id'] ?? null) ? (string) $body['replied_to_id'] : null,
             timestamp: is_string($body['timestamp'] ?? null) ? (string) $body['timestamp'] : null,
             isGroup: str_ends_with($chat, '@g.us'),
+            referral: $referral,
             raw: $payload,
         );
     }
@@ -216,6 +239,19 @@ final class IncomingMessage
     public function isMedia(): bool
     {
         return in_array($this->type, ['image', 'video', 'video_note', 'audio', 'document', 'sticker'], true);
+    }
+
+    public function isReferral(): bool
+    {
+        return ! empty($this->referral);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function referral(): ?array
+    {
+        return $this->referral;
     }
 
     public function isHandled(): bool

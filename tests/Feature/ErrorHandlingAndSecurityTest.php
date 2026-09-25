@@ -169,6 +169,86 @@ test('all deviceId-scoped methods reject empty deviceId without calling server',
     expect(fn() => $client->markPlayed('', '5511999998888', 'WAMID'))->toThrow(InvalidArgumentException::class);
     expect(fn() => $client->markRead('', '5511999998888', 'WAMID'))->toThrow(InvalidArgumentException::class);
     expect(fn() => $client->describeMedia('', '5511999998888', 'WAMID'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->deleteDevice(''))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->reconnectDevice(''))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->checkUser('', '5511999998888'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->requestChatHistory('', '5511999998888'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->listSchedules(''))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->getSchedule('', 'SCHED-1'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->pauseSchedule('', 'SCHED-1'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->resumeSchedule('', 'SCHED-1'))->toThrow(InvalidArgumentException::class);
+    expect(fn() => $client->cancelSchedule('', 'SCHED-1'))->toThrow(InvalidArgumentException::class);
 
     expect($mockHandler->count())->toBe(0);
+});
+
+test('all scheduleId-scoped methods reject empty or whitespace scheduleId without calling server', function (string $invalidScheduleId) {
+    $mockHandler = new MockHandler([]);
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    expect(fn() => $client->getSchedule('dev-1', $invalidScheduleId))
+        ->toThrow(InvalidArgumentException::class, 'Schedule ID cannot be empty or whitespace.');
+    expect(fn() => $client->pauseSchedule('dev-1', $invalidScheduleId))
+        ->toThrow(InvalidArgumentException::class, 'Schedule ID cannot be empty or whitespace.');
+    expect(fn() => $client->resumeSchedule('dev-1', $invalidScheduleId))
+        ->toThrow(InvalidArgumentException::class, 'Schedule ID cannot be empty or whitespace.');
+    expect(fn() => $client->cancelSchedule('dev-1', $invalidScheduleId))
+        ->toThrow(InvalidArgumentException::class, 'Schedule ID cannot be empty or whitespace.');
+
+    expect($mockHandler->count())->toBe(0);
+})->with([
+    '',
+    ' ',
+    '   ',
+    "\t",
+    "\n",
+]);
+
+test('path parameters reject path traversal and dangerous characters without calling server', function (string $traversal) {
+    $mockHandler = new MockHandler([]);
+    $config = new Config(
+        baseUrl: 'https://gowa.example.com',
+        username: 'admin',
+        password: 'secretpassword',
+    );
+    $client = new GowaClient($config, handler: $mockHandler);
+
+    expect(fn() => $client->deleteDevice("dev{$traversal}"))
+        ->toThrow(InvalidArgumentException::class, 'Device ID contains invalid path characters.');
+    expect(fn() => $client->reconnectDevice("dev{$traversal}"))
+        ->toThrow(InvalidArgumentException::class, 'Device ID contains invalid path characters.');
+    expect(fn() => $client->getSchedule('dev-1', "sched{$traversal}"))
+        ->toThrow(InvalidArgumentException::class, 'Schedule ID contains invalid path characters.');
+    expect(fn() => $client->deleteMessage('dev-1', '5511999998888', "msg{$traversal}"))
+        ->toThrow(InvalidArgumentException::class, 'Message ID contains invalid path characters.');
+    expect(fn() => $client->requestChatHistory('dev-1', "5511999998888@s.whatsapp.net{$traversal}"))
+        ->toThrow(InvalidArgumentException::class, 'Chat JID contains invalid path characters.');
+
+    expect($mockHandler->count())->toBe(0);
+})->with([
+    '/../other',
+    '\\..\\other',
+    '/admin',
+    '?query=inject',
+    '#fragment',
+]);
+
+test('non-schedulable endpoint rejects response returning only schedule_id', function () {
+    $client = createMockGowaClient([
+        new Response(200, [], json_encode([
+            'code'    => 'SUCCESS',
+            'message' => 'Reaction queued',
+            'results' => [
+                'schedule_id' => 'SCHED-UNEXPECTED-1',
+            ],
+        ])),
+    ]);
+
+    expect(fn() => $client->sendReaction('dev-1', '5511999998888', 'WAMID-1', '👍'))
+        ->toThrow(GowaRequestException::class, 'gowa accepted send reaction without returning a message_id.');
 });

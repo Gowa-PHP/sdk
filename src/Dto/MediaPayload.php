@@ -6,10 +6,15 @@ namespace Gowa\Sdk\Dto;
 
 final class MediaPayload
 {
+    /**
+     * @param list<string> $mentions
+     */
     public function __construct(
         public readonly MediaType $type,
         public readonly ?MediaUpload $upload = null,
         public readonly ?string $caption = null,
         public readonly bool $voice = false,
+        public readonly array $mentions = [],
+        public readonly bool $viewOnce = false,
     ) {}
 }

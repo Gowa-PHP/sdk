@@ -28,6 +28,8 @@ final class Device
         $phone = null;
         if (is_string($device['phone'] ?? null) && $device['phone'] !== '') {
             $phone = (string) $device['phone'];
+        } elseif (is_string($device['phone_number'] ?? null) && $device['phone_number'] !== '') {
+            $phone = (string) $device['phone_number'];
         } elseif (is_string($device['jid'] ?? null) && str_contains((string) $device['jid'], '@')) {
             $phone = explode('@', (string) $device['jid'])[0];
         }

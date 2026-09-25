@@ -422,3 +422,82 @@ test('echo message with chat_id sets phone to contact and not from phone', funct
     expect($msg->phone)->toBe('5511999991234');
     expect($msg->phone)->not->toBe('5511888888888');
 });
+
+test('parses message with referral metadata from json string or array', function () {
+    $payloadJsonString = [
+        'event'   => 'message',
+        'payload' => [
+            'id'                => 'AD_MSG_1',
+            'chat_id'           => '5511999991234@s.whatsapp.net',
+            'body'              => 'Vi o anúncio no Instagram',
+            'referral_metadata' => '{"ctwa_clid":"ad_click_123","source_app":"instagram","headline":"Promoção de Verão"}',
+        ],
+    ];
+
+    $parsed1 = WebhookParser::parse($payloadJsonString);
+    /** @var IncomingMessage $msg1 */
+    $msg1 = $parsed1['data'];
+
+    expect($msg1->isReferral())->toBeTrue()
+        ->and($msg1->referral())->toBeArray()
+        ->and($msg1->referral()['ctwa_clid'])->toBe('ad_click_123')
+        ->and($msg1->referral()['source_app'])->toBe('instagram')
+        ->and($msg1->referral()['headline'])->toBe('Promoção de Verão');
+
+    $payloadArray = [
+        'event'   => 'message',
+        'payload' => [
+            'id'                => 'AD_MSG_2',
+            'chat_id'           => '5511999991234@s.whatsapp.net',
+            'body'              => 'Quero saber mais',
+            'referral_metadata' => [
+                'ctwa_clid'  => 'ad_click_456',
+                'source_app' => 'facebook',
+            ],
+        ],
+    ];
+
+    $parsed2 = WebhookParser::parse($payloadArray);
+    /** @var IncomingMessage $msg2 */
+    $msg2 = $parsed2['data'];
+
+    expect($msg2->isReferral())->toBeTrue()
+        ->and($msg2->referral()['ctwa_clid'])->toBe('ad_click_456')
+        ->and($msg2->referral()['source_app'])->toBe('facebook');
+
+    $payloadNoReferral = [
+        'event'   => 'message',
+        'payload' => [
+            'id'      => 'PLAIN_MSG',
+            'chat_id' => '5511999991234@s.whatsapp.net',
+            'body'    => 'Oi normal',
+        ],
+    ];
+
+    $parsed3 = WebhookParser::parse($payloadNoReferral);
+    /** @var IncomingMessage $msg3 */
+    $msg3 = $parsed3['data'];
+
+    expect($msg3->isReferral())->toBeFalse()
+        ->and($msg3->referral())->toBeNull();
+
+    $payloadEmptyMetadataFallback = [
+        'event'   => 'message',
+        'payload' => [
+            'id'                => 'FALLBACK_MSG',
+            'chat_id'           => '5511999991234@s.whatsapp.net',
+            'body'              => 'Fallback test',
+            'referral_metadata' => '',
+            'referral'          => [
+                'ctwa_clid' => 'fallback_ctwa_789',
+            ],
+        ],
+    ];
+
+    $parsed4 = WebhookParser::parse($payloadEmptyMetadataFallback);
+    /** @var IncomingMessage $msg4 */
+    $msg4 = $parsed4['data'];
+
+    expect($msg4->isReferral())->toBeTrue()
+        ->and($msg4->referral())->toBe(['ctwa_clid' => 'fallback_ctwa_789']);
+});

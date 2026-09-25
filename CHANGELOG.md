@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Support for mentions (`mentions: list<string>`) in `sendText()` and `sendMedia()`, converting `@phone` and `@everyone` in message text or media captions into real WhatsApp mentions.
+- Support for view-once (`viewOnce: bool`) media sends in `MediaPayload` and `sendMedia()`.
+- Support for disappearing message duration (`duration: ?int`) in `sendText()`.
+- Support for GOWA v9.5+ scheduled and recurring message sends:
+  - DTO `ScheduleOptions` with `toArray()` and `toMultipart()` (handling repeated `weekdays` form fields).
+  - DTO `Schedule` mapping all scheduled send fields and status.
+  - Enum `ScheduleStatus` (`Active`, `Running`, `Paused`, `Completed`, `Failed`, `Cancelled`, `Unknown`).
+  - Optional `?ScheduleOptions $schedule = null` parameter in `sendText()`, `sendMedia()`, and `forwardMessage()`.
+  - Properties `scheduleId` and `scheduledAt` and helper `isScheduled(): bool` on `SentMessage`.
+  - Management methods in `GowaClient`: `listSchedules()`, `getSchedule()`, `pauseSchedule()`, `resumeSchedule()`, `cancelSchedule()`.
+- Full device slot lifecycle management:
+  - `devices()` and `listDevices()` querying `GET /devices` and returning `list<Device>`.
+  - `deleteDevice()` sending `DELETE /devices/:id` to purge device slot and associated JID data.
+  - `reconnectDevice()` sending `POST /devices/:id/reconnect`.
+- User check endpoint `checkUser(string $deviceId, string $phone): bool` querying `GET /user/check` to verify WhatsApp presence.
+- On-demand chat history endpoint `requestChatHistory(string $deviceId, string $chatJid, int $count = 50)` querying `POST /chat/:jid/history`.
+- Click-to-WhatsApp (Meta Ads) referral metadata support in `IncomingMessage`: `referral` property and `isReferral(): bool` helper.
+
+## [1.6.0] - 2026-09-25
+
+### Added
 - Structured exception `GowaUnreachableException extends GowaRequestException` for network/transport failures, connection refused, DNS errors, and timeouts.
 - Structured exception `MediaUnavailableException extends GowaRequestException` for permanent media download refusals (not found, does not contain media, unsupported media type).
 - `statusCode`, `gowaCode`, and `gowaMessage` properties (and getters) on `GowaRequestException`.
@@ -49,5 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete Pest PHP test suite with 27 tests and 61 assertions.
 - Documentation in English (`README.md`) and Portuguese (`README.pt.md`), along with `CONTRIBUTING.md` and `SECURITY.md`.
 
-[Unreleased]: https://github.com/aguinaldotupy/gowa-php/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/aguinaldotupy/gowa-php/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/aguinaldotupy/gowa-php/compare/v1.0.0...v1.6.0
 [1.0.0]: https://github.com/aguinaldotupy/gowa-php/releases/tag/v1.0.0

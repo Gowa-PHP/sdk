@@ -291,3 +291,147 @@ test('contact card parses from array correctly', function () {
 
     expect(ContactCard::fromArray([]))->toBeNull();
 });
+
+test('media payload supports mentions and view once', function () {
+    $upload = \Gowa\Sdk\Dto\MediaUpload::fromUrl('https://example.com/test.jpg');
+    $payload = new \Gowa\Sdk\Dto\MediaPayload(
+        type: \Gowa\Sdk\Dto\MediaType::Image,
+        upload: $upload,
+        caption: 'Look at @5511999998888',
+        voice: false,
+        mentions: ['5511999998888', '@everyone'],
+        viewOnce: true,
+    );
+
+    expect($payload->mentions)->toBe(['5511999998888', '@everyone'])
+        ->and($payload->viewOnce)->toBeTrue();
+});
+
+test('sent message detects scheduled sends and provides schedule details', function () {
+    $immediate = new \Gowa\Sdk\Dto\SentMessage(providerMessageId: 'WAMID-123');
+    expect($immediate->providerMessageId)->toBe('WAMID-123')
+        ->and($immediate->hasMessageId())->toBeTrue()
+        ->and($immediate->scheduleId)->toBeNull()
+        ->and($immediate->isScheduled())->toBeFalse();
+
+    $legacyPositional = new \Gowa\Sdk\Dto\SentMessage('WAMID-456', ['results' => ['message_id' => 'WAMID-456']]);
+    expect($legacyPositional->providerMessageId)->toBe('WAMID-456')
+        ->and($legacyPositional->hasMessageId())->toBeTrue()
+        ->and($legacyPositional->raw)->toBe(['results' => ['message_id' => 'WAMID-456']])
+        ->and($legacyPositional->scheduleId)->toBeNull()
+        ->and($legacyPositional->isScheduled())->toBeFalse();
+
+    $scheduled = new \Gowa\Sdk\Dto\SentMessage(
+        scheduleId: 'SCHED-UUID-999',
+        scheduledAt: '2026-10-01T09:00:00Z',
+    );
+    expect($scheduled->providerMessageId)->toBe('')
+        ->and($scheduled->hasMessageId())->toBeFalse()
+        ->and($scheduled->scheduleId)->toBe('SCHED-UUID-999')
+        ->and($scheduled->scheduledAt)->toBe('2026-10-01T09:00:00Z')
+        ->and($scheduled->isScheduled())->toBeTrue();
+});
+
+test('schedule options converts to array and multipart correctly', function () {
+    $options = new \Gowa\Sdk\Dto\ScheduleOptions(
+        scheduledAt: '2026-10-01T09:00:00+07:00',
+        timezone: 'Asia/Jakarta',
+        recurrence: 'weekly',
+        weekdays: [1, 3, 5],
+        dayOfMonth: 15,
+        endAt: '2026-12-31T23:59:59+07:00',
+        occurrenceLimit: 10,
+    );
+
+    $array = $options->toArray();
+    expect($array['scheduled_at'])->toBe('2026-10-01T09:00:00+07:00')
+        ->and($array['timezone'])->toBe('Asia/Jakarta')
+        ->and($array['recurrence'])->toBe('weekly')
+        ->and($array['weekdays'])->toBe([1, 3, 5])
+        ->and($array['day_of_month'])->toBe(15)
+        ->and($array['end_at'])->toBe('2026-12-31T23:59:59+07:00')
+        ->and($array['occurrence_limit'])->toBe(10);
+
+    $multipart = $options->toMultipart();
+    expect($multipart)->toContain(['name' => 'scheduled_at', 'contents' => '2026-10-01T09:00:00+07:00'])
+        ->and($multipart)->toContain(['name' => 'timezone', 'contents' => 'Asia/Jakarta'])
+        ->and($multipart)->toContain(['name' => 'weekdays', 'contents' => '1'])
+        ->and($multipart)->toContain(['name' => 'weekdays', 'contents' => '3'])
+        ->and($multipart)->toContain(['name' => 'weekdays', 'contents' => '5'])
+        ->and($multipart)->toContain(['name' => 'day_of_month', 'contents' => '15'])
+        ->and($multipart)->toContain(['name' => 'occurrence_limit', 'contents' => '10']);
+});
+
+test('schedule dto parses complete schedule response correctly', function () {
+    $data = [
+        'id'               => 'sched-123',
+        'message_type'     => 'image',
+        'phone'            => '5511999998888@s.whatsapp.net',
+        'summary'          => 'Relatório mensal',
+        'status'           => 'active',
+        'scheduled_at'     => '2026-10-01T09:00:00Z',
+        'next_run_at'      => '2026-10-01T09:00:00Z',
+        'timezone'         => 'America/Sao_Paulo',
+        'recurrence'       => 'monthly',
+        'day_of_month'     => 1,
+        'occurrence_limit' => 12,
+        'occurrence_count' => 2,
+        'attempts'         => 0,
+        'last_run_at'      => '2026-09-01T09:00:00Z',
+        'last_message_id'  => 'WAMID-PREV-1',
+        'last_error'       => null,
+        'created_at'       => '2026-08-01T00:00:00Z',
+        'updated_at'       => '2026-09-01T09:00:01Z',
+    ];
+
+    $schedule = \Gowa\Sdk\Dto\Schedule::fromArray($data);
+
+    expect($schedule->id)->toBe('sched-123')
+        ->and($schedule->messageType)->toBe('image')
+        ->and($schedule->phone)->toBe('5511999998888@s.whatsapp.net')
+        ->and($schedule->summary)->toBe('Relatório mensal')
+        ->and($schedule->status)->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Active)
+        ->and($schedule->scheduledAt)->toBe('2026-10-01T09:00:00Z')
+        ->and($schedule->nextRunAt)->toBe('2026-10-01T09:00:00Z')
+        ->and($schedule->recurrence)->toBe('monthly')
+        ->and($schedule->dayOfMonth)->toBe(1)
+        ->and($schedule->occurrenceCount)->toBe(2)
+        ->and($schedule->lastMessageId)->toBe('WAMID-PREV-1');
+});
+
+test('schedule dto parses comma-separated weekdays and guards against empty string numbers', function () {
+    $data = [
+        'id'               => 'sched-csv',
+        'message_type'     => 'text',
+        'phone'            => '5511999998888',
+        'weekdays'         => '1, 3, 5',
+        'day_of_month'     => '',
+        'occurrence_limit' => '',
+    ];
+
+    $schedule = \Gowa\Sdk\Dto\Schedule::fromArray($data);
+
+    expect($schedule->weekdays)->toBe([1, 3, 5])
+        ->and($schedule->dayOfMonth)->toBeNull()
+        ->and($schedule->occurrenceLimit)->toBeNull();
+});
+
+test('schedule status enum resolves statuses safely with unknown fallback', function () {
+    expect(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('ACTIVE'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Active)
+        ->and(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('paused'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Paused)
+        ->and(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('COMPLETED'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Completed)
+        ->and(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('failed'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Failed)
+        ->and(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('cancelled'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Cancelled)
+        ->and(\Gowa\Sdk\Dto\ScheduleStatus::tryFromValue('non_existent_status'))->toBe(\Gowa\Sdk\Dto\ScheduleStatus::Unknown);
+});
+
+test('device dto parses phone_number key fallback correctly', function () {
+    $device = Device::fromResults([
+        'id'           => 'dev-fallback',
+        'display_name' => 'Fallback Dev',
+        'state'        => 'connected',
+        'phone_number' => '5511988887777',
+    ]);
+
+    expect($device->phone)->toBe('5511988887777');
+});

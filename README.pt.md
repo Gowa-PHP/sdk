@@ -63,7 +63,7 @@ $client = new GowaClient($config);
 // $client = new GowaClient($config, handler: $customHandler);
 ```
 
-### 2. Pareamento de Aparelho (QR Code ou Código de 8 Dígitos)
+### 2. Gestão e Pareamento de Aparelhos
 
 ```php
 // Criar ou registrar o dispositivo e webhook
@@ -81,14 +81,32 @@ echo $pairing->qrLink; // URL do QR Code
 // Ou pedir código de 8 dígitos para digitar no celular
 $codePairing = $client->startCodePairing('minha-instancia-uuid', '5511999998888');
 echo $codePairing->pairCode; // Ex: ABCD-1234
+
+// Listar todos os aparelhos registrados no servidor
+$devices = $client->devices();
+
+// Reconectar ou purgar/excluir permanentemente o slot de um aparelho
+$client->reconnectDevice('minha-instancia-uuid');
+$client->deleteDevice('minha-instancia-uuid');
+
+// Checar se um número está no WhatsApp antes de disparar mensagens
+if ($client->checkUser('minha-instancia-uuid', '5511999998888')) {
+    echo "Número possui WhatsApp!";
+}
 ```
 
 ### 3. Envio de Mensagens e Mídias
 
-#### Texto, Links e Enquetes
+#### Texto, Links, Enquetes e Menções
 ```php
-// Enviar texto
-$client->sendText('minha-instancia-uuid', '5511999998888', 'Olá! Mensagem enviada via gowa-php SDK.');
+// Enviar texto com menções (@everyone ou números) e mensagens efêmeras (24h = 86400s)
+$client->sendText(
+    deviceId: 'minha-instancia-uuid',
+    to: '120363xxxx@g.us',
+    text: 'Olá @everyone e @5511999998888!',
+    mentions: ['5511999998888', '@everyone'],
+    duration: 86400,
+);
 
 // Enviar link com prévia visual
 $client->sendLink('minha-instancia-uuid', '5511999998888', 'https://fazz.ai', 'Confira nosso site');
@@ -97,7 +115,7 @@ $client->sendLink('minha-instancia-uuid', '5511999998888', 'https://fazz.ai', 'C
 $client->sendPoll('minha-instancia-uuid', '5511999998888', 'Qual seu horário preferido?', ['Manhã', 'Tarde', 'Noite']);
 ```
 
-#### Upload de Mídias (Arquivos, URLs, Streams e Notas de Voz)
+#### Upload de Mídias (Arquivos, URLs, Menções e Visualização Única)
 ```php
 use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
@@ -108,15 +126,51 @@ $upload = MediaUpload::fromUrl('https://minhaempresa.com/storage/recado.m4a');
 $media = new MediaPayload(type: MediaType::Audio, upload: $upload, voice: true);
 $client->sendMedia('minha-instancia-uuid', '5511999998888', $media);
 
-// Enviar documento local
-$docUpload = MediaUpload::fromPath('/caminho/para/fatura.pdf');
-$docMedia = new MediaPayload(type: MediaType::Document, upload: $docUpload);
-$client->sendMedia('minha-instancia-uuid', '5511999998888', $docMedia);
+// Enviar imagem local com menção na legenda e visualização única (view-once) ativada
+$imgUpload = MediaUpload::fromPath('/caminho/para/fatura.jpg');
+$imgMedia = new MediaPayload(
+    type: MediaType::Image,
+    upload: $imgUpload,
+    caption: 'Fatura para @5511999998888',
+    mentions: ['5511999998888'],
+    viewOnce: true,
+);
+$client->sendMedia('minha-instancia-uuid', '5511999998888', $imgMedia);
 ```
 
-#### Ações em Mensagens (Encaminhar, Editar, Revogar, Reagir, Favoritar)
+#### Envios Agendados e Recorrentes (GOWA v9.5+)
 ```php
-// Encaminhar mensagem
+use Gowa\Sdk\Dto\ScheduleOptions;
+
+// Agendar mensagem pontual ou com recorrência
+$schedule = new ScheduleOptions(
+    scheduledAt: '2026-10-01T09:00:00Z',
+    timezone: 'America/Sao_Paulo',
+    recurrence: 'weekly',
+    weekdays: [1, 3, 5], // Segunda, Quarta e Sexta
+    endAt: '2026-12-31T23:59:59Z',
+    occurrenceLimit: 20,
+);
+
+$sent = $client->sendText(
+    deviceId: 'minha-instancia-uuid',
+    to: '5511999998888',
+    text: 'Lembrete semanal!',
+    schedule: $schedule,
+);
+
+echo $sent->scheduleId; // Ex: '0b5c3a8e-7f5d-4d6f-9d1e-2f8c1a7b9e10'
+
+// Gestão de agendamentos
+$schedules = $client->listSchedules('minha-instancia-uuid');
+$client->pauseSchedule('minha-instancia-uuid', $sent->scheduleId);
+$client->resumeSchedule('minha-instancia-uuid', $sent->scheduleId);
+$client->cancelSchedule('minha-instancia-uuid', $sent->scheduleId);
+```
+
+#### Ações em Mensagens (Encaminhar, Editar, Revogar, Reagir, Favoritar e Histórico)
+```php
+// Encaminhar mensagem (também suporta agendamento via ScheduleOptions)
 $client->forwardMessage('minha-instancia-uuid', '5511999998888', 'WAMID_ORIGINAL_123');
 
 // Editar mensagem enviada
@@ -130,6 +184,9 @@ $client->revokeMessage('minha-instancia-uuid', '5511999998888', 'WAMID_ORIGINAL_
 
 // Favoritar ou desfavoritar mensagem
 $client->starMessage('minha-instancia-uuid', '5511999998888', 'WAMID_ORIGINAL_123', true);
+
+// Solicitar histórico antigo de mensagens sob demanda direto do telefone
+$client->requestChatHistory('minha-instancia-uuid', '5511999998888', count: 50);
 ```
 
 #### Download de Mídias (Candidatos de Telefone para Eco, Timeout e Limpeza)
@@ -221,39 +278,54 @@ WebhookParser::parse($payload)
 | Recurso | Método | Endpoint |
 |---|---|---|
 | Criar Dispositivo & Webhook | `createDevice()` | `POST /devices` |
+| Listar Dispositivos Registrados | `devices()`, `listDevices()` | `GET /devices` |
 | Atualizar Configurações de Webhook | `updateWebhook()` | `PATCH /devices/:id/webhook` |
 | Iniciar Pareamento por QR Code | `startQrPairing()` | `GET /devices/:id/login` |
 | Iniciar Pareamento por Código de 8 Dígitos | `startCodePairing()` | `POST /devices/:id/login/code` |
 | Consultar Status do Dispositivo | `device()` | `GET /devices/:id` |
+| Reconectar Dispositivo | `reconnectDevice()` | `POST /devices/:id/reconnect` |
 | Desconectar Dispositivo (Logout) | `logout()` | `POST /devices/:id/logout` |
+| Purgar / Excluir Dispositivo | `deleteDevice()` | `DELETE /devices/:id` |
 
 ### Envio de Mensagens e Interações
 
 | Recurso | Método | Endpoint |
 |---|---|---|
-| Mensagem de Texto | `sendText()` | `POST /send/message` |
-| Imagem | `sendMedia()` | `POST /send/image` |
-| Vídeo | `sendMedia()` | `POST /send/video` |
-| Áudio / Recado de Voz PTT | `sendMedia()` (voice: true) | `POST /send/audio` |
-| Documento / Arquivo | `sendMedia()` | `POST /send/file` |
+| Mensagem de Texto (Menções, Efêmera, Agendamento) | `sendText()` | `POST /send/message` |
+| Imagem (Menção na Legenda, View-Once, Agendamento) | `sendMedia()` | `POST /send/image` |
+| Vídeo (Menção na Legenda, View-Once, Agendamento) | `sendMedia()` | `POST /send/video` |
+| Áudio / Recado de Voz PTT (Agendamento) | `sendMedia()` (voice: true) | `POST /send/audio` |
+| Documento / Arquivo (Menções, Agendamento) | `sendMedia()` | `POST /send/file` |
 | Figurinha WebP | `sendSticker()` | `POST /send/sticker` |
 | Localização | `sendLocation()` | `POST /send/location` |
 | Cartão de Contato | `sendContacts()` | `POST /send/contact` |
 | Prévia de Link | `sendLink()` | `POST /send/link` |
 | Enquete Interativa | `sendPoll()` | `POST /send/poll` |
 | Reação com Emoji | `sendReaction()` | `POST /message/:id/reaction` |
-| Encaminhar Mensagem | `forwardMessage()` | `POST /message/:id/forward` |
+| Encaminhar Mensagem (Agendamento) | `forwardMessage()` | `POST /message/:id/forward` |
 | Editar Mensagem | `editMessage()` | `POST /message/:id/update` |
 | Revogar (Apagar para todos) | `revokeMessage()` | `POST /message/:id/revoke` |
 | Deletar (Local) | `deleteMessage()` | `POST /message/:id/delete` |
 | Favoritar / Desfavoritar | `starMessage()` | `POST /message/:id/star`, `POST /message/:id/unstar` |
 | Marcar Áudio Ouvido | `markPlayed()` | `POST /message/:id/played` |
 | Confirmar Leitura / Digitando | `markRead()` | `POST /message/:id/read` |
+| Histórico de Chat Sob Demanda | `requestChatHistory()` | `POST /chat/:jid/history` |
 
-### Contatos e Download de Mídias
+### Envios Agendados e Recorrentes (GOWA v9.5+)
 
 | Recurso | Método | Endpoint |
 |---|---|---|
+| Listar Agendamentos | `listSchedules()` | `GET /send/schedules` |
+| Consultar Agendamento | `getSchedule()` | `GET /send/schedules/:id` |
+| Pausar Agendamento | `pauseSchedule()` | `POST /send/schedules/:id/pause` |
+| Retomar Agendamento | `resumeSchedule()` | `POST /send/schedules/:id/resume` |
+| Cancelar Agendamento | `cancelSchedule()` | `POST /send/schedules/:id/cancel` |
+
+### Contatos, Presença e Download de Mídias
+
+| Recurso | Método | Endpoint |
+|---|---|---|
+| Verificar se Usuário está no WhatsApp | `checkUser()` | `GET /user/check` |
 | Foto de Perfil do Contato | `avatar()` | `GET /user/avatar` |
 | Preparar Download de Mídia | `describeMedia()` | `GET /message/:id/download` |
 | Baixar Mídia Descriptografada | `downloadMedia()` | GET URL da mídia |
