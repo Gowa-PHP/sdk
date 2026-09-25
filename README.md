@@ -63,7 +63,7 @@ $client = new GowaClient($config);
 // $client = new GowaClient($config, handler: $customHandler);
 ```
 
-### 2. Device Pairing (QR Code or 8-Digit Code)
+### 2. Device Management & Pairing
 
 ```php
 // Register device and webhook
@@ -81,14 +81,32 @@ echo $pairing->qrLink; // QR Code URL
 // Or request 8-digit code for manual typing on phone
 $codePairing = $client->startCodePairing('my-instance-uuid', '5511999998888');
 echo $codePairing->pairCode; // e.g. ABCD-1234
+
+// List all registered devices on the server
+$devices = $client->devices();
+
+// Reconnect or permanently delete/purge a device slot
+$client->reconnectDevice('my-instance-uuid');
+$client->deleteDevice('my-instance-uuid');
+
+// Check if a number is registered on WhatsApp before messaging
+if ($client->checkUser('my-instance-uuid', '5511999998888')) {
+    echo "Phone is on WhatsApp!";
+}
 ```
 
 ### 3. Sending Messages and Media
 
-#### Text, Links & Polls
+#### Text, Links, Polls & Mentions
 ```php
-// Send text
-$client->sendText('my-instance-uuid', '5511999998888', 'Hello! Message sent via gowa-php SDK.');
+// Send text with mentions (@everyone or phone numbers) and disappearing messages duration (24h = 86400s)
+$client->sendText(
+    deviceId: 'my-instance-uuid',
+    to: '120363xxxx@g.us',
+    text: 'Hello @everyone and @5511999998888!',
+    mentions: ['5511999998888', '@everyone'],
+    duration: 86400,
+);
 
 // Send URL link with preview
 $client->sendLink('my-instance-uuid', '5511999998888', 'https://fazz.ai', 'Check our website');
@@ -97,7 +115,7 @@ $client->sendLink('my-instance-uuid', '5511999998888', 'https://fazz.ai', 'Check
 $client->sendPoll('my-instance-uuid', '5511999998888', 'What is your preferred time?', ['Morning', 'Afternoon', 'Evening']);
 ```
 
-#### Media Uploads (Files, URLs, Streams & Voice Notes)
+#### Media Uploads (Files, URLs, Mentions & View Once)
 ```php
 use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
@@ -108,15 +126,51 @@ $upload = MediaUpload::fromUrl('https://mycompany.com/storage/voicenote.m4a');
 $media = new MediaPayload(type: MediaType::Audio, upload: $upload, voice: true);
 $client->sendMedia('my-instance-uuid', '5511999998888', $media);
 
-// Send local document
-$docUpload = MediaUpload::fromPath('/path/to/invoice.pdf');
-$docMedia = new MediaPayload(type: MediaType::Document, upload: $docUpload);
-$client->sendMedia('my-instance-uuid', '5511999998888', $docMedia);
+// Send local image with caption mentions and view-once enabled
+$imgUpload = MediaUpload::fromPath('/path/to/invoice.jpg');
+$imgMedia = new MediaPayload(
+    type: MediaType::Image,
+    upload: $imgUpload,
+    caption: 'Invoice for @5511999998888',
+    mentions: ['5511999998888'],
+    viewOnce: true,
+);
+$client->sendMedia('my-instance-uuid', '5511999998888', $imgMedia);
 ```
 
-#### Message Actions (Forward, Edit, Revoke, Reactions, Star)
+#### Scheduled & Recurring Message Sends (GOWA v9.5+)
 ```php
-// Forward message
+use Gowa\Sdk\Dto\ScheduleOptions;
+
+// Schedule a message for future or recurring delivery
+$schedule = new ScheduleOptions(
+    scheduledAt: '2026-10-01T09:00:00Z',
+    timezone: 'America/Sao_Paulo',
+    recurrence: 'weekly',
+    weekdays: [1, 3, 5], // Monday, Wednesday, Friday
+    endAt: '2026-12-31T23:59:59Z',
+    occurrenceLimit: 20,
+);
+
+$sent = $client->sendText(
+    deviceId: 'my-instance-uuid',
+    to: '5511999998888',
+    text: 'Weekly reminder!',
+    schedule: $schedule,
+);
+
+echo $sent->scheduleId; // e.g. '0b5c3a8e-7f5d-4d6f-9d1e-2f8c1a7b9e10'
+
+// Manage schedules
+$schedules = $client->listSchedules('my-instance-uuid');
+$client->pauseSchedule('my-instance-uuid', $sent->scheduleId);
+$client->resumeSchedule('my-instance-uuid', $sent->scheduleId);
+$client->cancelSchedule('my-instance-uuid', $sent->scheduleId);
+```
+
+#### Message Actions (Forward, Edit, Revoke, Reactions, Star & Chat History)
+```php
+// Forward message (also supports scheduling via ScheduleOptions)
 $client->forwardMessage('my-instance-uuid', '5511999998888', 'WAMID_ORIGINAL_123');
 
 // Edit sent text
@@ -130,6 +184,9 @@ $client->revokeMessage('my-instance-uuid', '5511999998888', 'WAMID_ORIGINAL_123'
 
 // Star or unstar message
 $client->starMessage('my-instance-uuid', '5511999998888', 'WAMID_ORIGINAL_123', true);
+
+// Request older chat history from the phone on-demand (e.g. 50 messages)
+$client->requestChatHistory('my-instance-uuid', '5511999998888', count: 50);
 ```
 
 #### Media Download (Echo Candidate Phones, Timeout, and Cleanup)
@@ -221,39 +278,54 @@ WebhookParser::parse($payload)
 | Feature | Method | Endpoint |
 |---|---|---|
 | Register Device & Webhook | `createDevice()` | `POST /devices` |
+| List Registered Devices | `devices()`, `listDevices()` | `GET /devices` |
 | Update Webhook Config | `updateWebhook()` | `PATCH /devices/:id/webhook` |
 | Start QR Pairing | `startQrPairing()` | `GET /devices/:id/login` |
 | Start 8-Digit Code Pairing | `startCodePairing()` | `POST /devices/:id/login/code` |
 | Query Device Info & Status | `device()` | `GET /devices/:id` |
-| Logout Device | `logout()` | `POST /devices/:id/logout` |
+| Reconnect Device | `reconnectDevice()` | `POST /devices/:id/reconnect` |
+| Logout Device (Keep Slot) | `logout()` | `POST /devices/:id/logout` |
+| Purge / Delete Device Slot | `deleteDevice()` | `DELETE /devices/:id` |
 
 ### Messages & Interactions
 
 | Feature | Method | Endpoint |
 |---|---|---|
-| Text Message | `sendText()` | `POST /send/message` |
-| Image | `sendMedia()` | `POST /send/image` |
-| Video | `sendMedia()` | `POST /send/video` |
-| Audio / PTT Voice Note | `sendMedia()` (voice: true) | `POST /send/audio` |
-| Document / File | `sendMedia()` | `POST /send/file` |
+| Text Message (Mentions, Duration, Schedule) | `sendText()` | `POST /send/message` |
+| Image (Caption Mentions, View-Once, Schedule) | `sendMedia()` | `POST /send/image` |
+| Video (Caption Mentions, View-Once, Schedule) | `sendMedia()` | `POST /send/video` |
+| Audio / PTT Voice Note (Schedule) | `sendMedia()` (voice: true) | `POST /send/audio` |
+| Document / File (Caption Mentions, Schedule) | `sendMedia()` | `POST /send/file` |
 | WebP Sticker | `sendSticker()` | `POST /send/sticker` |
 | Location | `sendLocation()` | `POST /send/location` |
 | Contact Card | `sendContacts()` | `POST /send/contact` |
 | URL Link Preview | `sendLink()` | `POST /send/link` |
 | Interactive Poll | `sendPoll()` | `POST /send/poll` |
 | Emoji Reaction | `sendReaction()` | `POST /message/:id/reaction` |
-| Forward Message | `forwardMessage()` | `POST /message/:id/forward` |
+| Forward Message (Schedule) | `forwardMessage()` | `POST /message/:id/forward` |
 | Edit Message | `editMessage()` | `POST /message/:id/update` |
 | Revoke Message (Delete for All) | `revokeMessage()` | `POST /message/:id/revoke` |
 | Delete Message (Local) | `deleteMessage()` | `POST /message/:id/delete` |
 | Star / Unstar Message | `starMessage()` | `POST /message/:id/star`, `POST /message/:id/unstar` |
 | Mark Audio Played | `markPlayed()` | `POST /message/:id/played` |
 | Mark Read / Typing | `markRead()` | `POST /message/:id/read` |
+| On-Demand Chat History | `requestChatHistory()` | `POST /chat/:jid/history` |
 
-### Contacts & Media Download
+### Scheduled & Recurring Sends (GOWA v9.5+)
 
 | Feature | Method | Endpoint |
 |---|---|---|
+| List Scheduled Sends | `listSchedules()` | `GET /send/schedules` |
+| Get Scheduled Send | `getSchedule()` | `GET /send/schedules/:id` |
+| Pause Scheduled Send | `pauseSchedule()` | `POST /send/schedules/:id/pause` |
+| Resume Scheduled Send | `resumeSchedule()` | `POST /send/schedules/:id/resume` |
+| Cancel Scheduled Send | `cancelSchedule()` | `POST /send/schedules/:id/cancel` |
+
+### Contacts, Presence & Media Download
+
+| Feature | Method | Endpoint |
+|---|---|---|
+| Check User on WhatsApp | `checkUser()` | `GET /user/check` |
 | Contact Profile Picture | `avatar()` | `GET /user/avatar` |
 | Prepare Media Download | `describeMedia()` | `GET /message/:id/download` |
 | Download Decrypted Media | `downloadMedia()` | GET media URL |

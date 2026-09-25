@@ -13,6 +13,9 @@ use Gowa\Sdk\Dto\MediaType;
 use Gowa\Sdk\Dto\MediaUpload;
 use Gowa\Sdk\Dto\Pairing;
 use Gowa\Sdk\Dto\RemoteMedia;
+use Gowa\Sdk\Dto\Schedule;
+use Gowa\Sdk\Dto\ScheduleOptions;
+use Gowa\Sdk\Dto\ScheduleStatus;
 use Gowa\Sdk\Dto\SentMessage;
 use Gowa\Sdk\Exceptions\GowaRequestException;
 use Gowa\Sdk\Exceptions\GowaUnreachableException;
@@ -94,10 +97,10 @@ class GowaClient
         array $events,
         bool $insecureSkipVerify = false,
     ): Device {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
 
         $response = $this->post('/devices', [
-            'device_id'                    => $deviceId,
+            'device_id'                    => $devId,
             'webhook_url'                  => $webhookUrl,
             'webhook_secret'               => $webhookSecret,
             'webhook_events'               => implode(',', $events),
@@ -135,8 +138,11 @@ class GowaClient
             $payload['webhook_events'] = implode(',', $events);
         }
 
-        $response = $this->patch("/devices/{$deviceId}/webhook", $payload, [], [
-            'X-Device-Id' => $deviceId,
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
+
+        $response = $this->patch("/devices/{$encodedDevId}/webhook", $payload, [], [
+            'X-Device-Id' => $devId,
         ]);
 
         return $this->results($response, 'update webhook');
@@ -147,9 +153,10 @@ class GowaClient
      */
     public function startQrPairing(string $deviceId): Pairing
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->get("/devices/{$deviceId}/login");
+        $response = $this->get("/devices/{$encodedDevId}/login");
 
         return Pairing::fromQr($this->results($response, 'start qr pairing'));
     }
@@ -159,9 +166,10 @@ class GowaClient
      */
     public function startCodePairing(string $deviceId, string $phone): Pairing
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->post("/devices/{$deviceId}/login/code", [], [
+        $response = $this->post("/devices/{$encodedDevId}/login/code", [], [
             'phone' => $phone,
         ]);
 
@@ -173,9 +181,10 @@ class GowaClient
      */
     public function device(string $deviceId): ?Device
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->get("/devices/{$deviceId}");
+        $response = $this->get("/devices/{$encodedDevId}");
 
         if ($response['status_code'] === 404) {
             return null;
@@ -189,10 +198,65 @@ class GowaClient
      */
     public function logout(string $deviceId): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
 
-        $response = $this->post("/devices/{$deviceId}/logout");
+        $response = $this->post("/devices/{$encodedDevId}/logout");
         $this->results($response, 'logout device');
+    }
+
+    /**
+     * List all registered devices
+     *
+     * @return list<Device>
+     */
+    public function devices(): array
+    {
+        $response = $this->get('/devices');
+        $results = $this->results($response, 'list devices');
+
+        $devices = [];
+        foreach ($results as $item) {
+            if (is_array($item)) {
+                $devices[] = Device::fromResults($item);
+            }
+        }
+
+        return $devices;
+    }
+
+    /**
+     * Alias of devices()
+     *
+     * @return list<Device>
+     */
+    public function listDevices(): array
+    {
+        return $this->devices();
+    }
+
+    /**
+     * Permanently remove and purge a device slot and its session data
+     */
+    public function deleteDevice(string $deviceId): void
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
+
+        $response = $this->delete("/devices/{$encodedDevId}");
+        $this->results($response, 'delete device');
+    }
+
+    /**
+     * Reconnect an existing device
+     */
+    public function reconnectDevice(string $deviceId): void
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedDevId = rawurlencode($devId);
+
+        $response = $this->post("/devices/{$encodedDevId}/reconnect");
+        $this->results($response, 'reconnect device');
     }
 
     /**
@@ -278,10 +342,37 @@ class GowaClient
     }
 
     /**
-     * Send text message
+     * Check if a phone number is registered on WhatsApp
      */
-    public function sendText(string $deviceId, string $to, string $text, ?string $replyTo = null): SentMessage
+    public function checkUser(string $deviceId, string $phone): bool
     {
+        self::assertValidDeviceId($deviceId);
+
+        $response = $this->get('/user/check', [
+            'phone' => self::jid($phone),
+        ], [
+            'X-Device-Id' => $deviceId,
+        ]);
+
+        $results = $this->results($response, 'check user');
+
+        return (bool) ($results['is_on_whatsapp'] ?? false);
+    }
+
+    /**
+     * Send text message
+     *
+     * @param list<string> $mentions
+     */
+    public function sendText(
+        string $deviceId,
+        string $to,
+        string $text,
+        ?string $replyTo = null,
+        array $mentions = [],
+        ?int $duration = null,
+        ?ScheduleOptions $schedule = null,
+    ): SentMessage {
         self::assertValidDeviceId($deviceId);
 
         $body = [
@@ -293,16 +384,34 @@ class GowaClient
             $body['reply_message_id'] = $replyTo;
         }
 
-        $response = $this->post('/send/message', $body, [], ['X-Device-Id' => $deviceId]);
+        if (! empty($mentions)) {
+            $body['mentions'] = array_values($mentions);
+        }
 
-        return $this->sentResult($response, 'send text message');
+        if ($duration !== null) {
+            $body['duration'] = $duration;
+        }
+
+        if ($schedule !== null) {
+            $body = array_merge($body, $schedule->toArray());
+        }
+
+        $devId = self::assertValidDeviceId($deviceId);
+        $response = $this->post('/send/message', $body, [], ['X-Device-Id' => $devId]);
+
+        return $this->sentResult($response, 'send text message', allowSchedule: $schedule !== null);
     }
 
     /**
      * Send media file (image, video, audio, document)
      */
-    public function sendMedia(string $deviceId, string $to, MediaPayload $media, ?string $replyTo = null): SentMessage
-    {
+    public function sendMedia(
+        string $deviceId,
+        string $to,
+        MediaPayload $media,
+        ?string $replyTo = null,
+        ?ScheduleOptions $schedule = null,
+    ): SentMessage {
         self::assertValidDeviceId($deviceId);
 
         $upload = $media->upload;
@@ -343,11 +452,31 @@ class GowaClient
             ];
         }
 
+        if ($media->viewOnce) {
+            $multipart[] = [
+                'name'     => 'view_once',
+                'contents' => 'true',
+            ];
+        }
+
+        foreach ($media->mentions as $mention) {
+            $multipart[] = [
+                'name'     => 'mentions',
+                'contents' => $mention,
+            ];
+        }
+
         if ($replyTo !== null && $replyTo !== '') {
             $multipart[] = [
                 'name'     => 'reply_message_id',
                 'contents' => $replyTo,
             ];
+        }
+
+        if ($schedule !== null) {
+            foreach ($schedule->toMultipart() as $item) {
+                $multipart[] = $item;
+            }
         }
 
         try {
@@ -365,7 +494,7 @@ class GowaClient
                 'raw_body'    => $rawBody,
             ];
 
-            return $this->sentResult($parsed, 'send media');
+            return $this->sentResult($parsed, 'send media', allowSchedule: $schedule !== null);
         } catch (GuzzleException $e) {
             throw new GowaUnreachableException("Network error sending media: {$e->getMessage()}", 0, $e);
         }
@@ -432,12 +561,13 @@ class GowaClient
      */
     public function sendReaction(string $deviceId, string $to, string $providerMessageId, string $emoji): SentMessage
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/reaction", [
+        $response = $this->post("/message/{$msgId}/reaction", [
             'phone' => self::jid($to),
             'emoji' => $emoji,
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         return $this->sentResult($response, 'send reaction');
     }
@@ -445,15 +575,26 @@ class GowaClient
     /**
      * Forward an existing message to another chat
      */
-    public function forwardMessage(string $deviceId, string $to, string $providerMessageId): SentMessage
-    {
-        self::assertValidDeviceId($deviceId);
+    public function forwardMessage(
+        string $deviceId,
+        string $to,
+        string $providerMessageId,
+        ?ScheduleOptions $schedule = null,
+    ): SentMessage {
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/forward", [
+        $body = [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ];
 
-        return $this->sentResult($response, 'forward message');
+        if ($schedule !== null) {
+            $body = array_merge($body, $schedule->toArray());
+        }
+
+        $response = $this->post("/message/{$msgId}/forward", $body, [], ['X-Device-Id' => $devId]);
+
+        return $this->sentResult($response, 'forward message', allowSchedule: $schedule !== null);
     }
 
     /**
@@ -559,12 +700,13 @@ class GowaClient
      */
     public function editMessage(string $deviceId, string $to, string $providerMessageId, string $newText): SentMessage
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/update", [
+        $response = $this->post("/message/{$msgId}/update", [
             'phone'   => self::jid($to),
             'message' => $newText,
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         return $this->sentResult($response, 'edit message');
     }
@@ -574,11 +716,12 @@ class GowaClient
      */
     public function revokeMessage(string $deviceId, string $to, string $providerMessageId): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/revoke", [
+        $response = $this->post("/message/{$msgId}/revoke", [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         $this->results($response, 'revoke message');
     }
@@ -588,11 +731,12 @@ class GowaClient
      */
     public function deleteMessage(string $deviceId, string $to, string $providerMessageId): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/delete", [
+        $response = $this->post("/message/{$msgId}/delete", [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         $this->results($response, 'delete message');
     }
@@ -602,13 +746,14 @@ class GowaClient
      */
     public function starMessage(string $deviceId, string $to, string $providerMessageId, bool $star = true): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $endpoint = $star ? "/message/{$providerMessageId}/star" : "/message/{$providerMessageId}/unstar";
+        $endpoint = $star ? "/message/{$msgId}/star" : "/message/{$msgId}/unstar";
 
         $response = $this->post($endpoint, [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         $this->results($response, ($star ? 'star' : 'unstar') . ' message');
     }
@@ -618,11 +763,12 @@ class GowaClient
      */
     public function markPlayed(string $deviceId, string $to, string $providerMessageId): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
-        $response = $this->post("/message/{$providerMessageId}/played", [
+        $response = $this->post("/message/{$msgId}/played", [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         $this->results($response, 'mark audio as played');
     }
@@ -632,20 +778,21 @@ class GowaClient
      */
     public function markRead(string $deviceId, string $to, string $providerMessageId, bool $withTyping = false): void
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
         if ($withTyping) {
             $presenceResponse = $this->post('/send/chat-presence', [
                 'phone'  => self::jid($to),
                 'action' => 'start',
-            ], [], ['X-Device-Id' => $deviceId]);
+            ], [], ['X-Device-Id' => $devId]);
 
             $this->results($presenceResponse, 'start chat presence');
         }
 
-        $response = $this->post("/message/{$providerMessageId}/read", [
+        $response = $this->post("/message/{$msgId}/read", [
             'phone' => self::jid($to),
-        ], [], ['X-Device-Id' => $deviceId]);
+        ], [], ['X-Device-Id' => $devId]);
 
         $this->results($response, 'mark read');
     }
@@ -658,7 +805,8 @@ class GowaClient
      */
     public function describeMedia(string $deviceId, string|array $phones, string $providerMessageId): ?RemoteMedia
     {
-        self::assertValidDeviceId($deviceId);
+        $devId = self::assertValidDeviceId($deviceId);
+        $msgId = self::assertValidMessageId($providerMessageId);
 
         $phoneList = array_values(array_filter(
             array_map(
@@ -676,10 +824,10 @@ class GowaClient
         $results = null;
 
         foreach ($phoneList as $phone) {
-            $response = $this->get("/message/{$providerMessageId}/download", [
+            $response = $this->get("/message/{$msgId}/download", [
                 'phone' => self::jid($phone),
             ], [
-                'X-Device-Id' => $deviceId,
+                'X-Device-Id' => $devId,
             ]);
 
             $lastResponse = $response;
@@ -778,11 +926,184 @@ class GowaClient
         }
     }
 
-    private static function assertValidDeviceId(string $deviceId): void
+    /**
+     * Request older chat history from the phone on-demand
+     *
+     * @return array<string, mixed>
+     */
+    public function requestChatHistory(string $deviceId, string $chatJid, int $count = 50): array
     {
-        if (trim($deviceId) === '') {
-            throw new InvalidArgumentException('Device ID cannot be empty or whitespace.');
+        $devId = self::assertValidDeviceId($deviceId);
+        $normalizedJid = self::jid($chatJid);
+
+        if (str_contains($normalizedJid, '/') || str_contains($normalizedJid, '\\') || str_contains($normalizedJid, '..') || str_contains($normalizedJid, '?') || str_contains($normalizedJid, '#')) {
+            throw new InvalidArgumentException('Chat JID contains invalid path characters.');
         }
+
+        $response = $this->post("/chat/{$normalizedJid}/history", [
+            'count' => $count,
+        ], [], [
+            'X-Device-Id' => $devId,
+        ]);
+
+        return $this->results($response, 'request chat history');
+    }
+
+    /**
+     * List scheduled sends for a device
+     *
+     * @return array{data: list<Schedule>, pagination: array{limit: int, offset: int, total: int}}
+     */
+    public function listSchedules(
+        string $deviceId,
+        ?ScheduleStatus $status = null,
+        ?string $messageType = null,
+        ?string $search = null,
+        int $limit = 25,
+        int $offset = 0,
+    ): array {
+        $devId = self::assertValidDeviceId($deviceId);
+
+        $query = [
+            'limit'  => $limit,
+            'offset' => $offset,
+        ];
+
+        if ($status !== null) {
+            $query['status'] = $status->value;
+        }
+
+        if ($messageType !== null && $messageType !== '') {
+            $query['message_type'] = $messageType;
+        }
+
+        if ($search !== null && $search !== '') {
+            $query['search'] = $search;
+        }
+
+        $response = $this->get('/send/schedules', $query, [
+            'X-Device-Id' => $devId,
+        ]);
+
+        $results = $this->results($response, 'list scheduled sends');
+        $rawList = is_array($results['data'] ?? null) ? $results['data'] : [];
+        $rawPagination = is_array($results['pagination'] ?? null) ? $results['pagination'] : [];
+
+        $schedules = [];
+        foreach ($rawList as $item) {
+            if (is_array($item)) {
+                $schedules[] = Schedule::fromArray($item);
+            }
+        }
+
+        return [
+            'data'       => $schedules,
+            'pagination' => [
+                'limit'  => (int) ($rawPagination['limit'] ?? $limit),
+                'offset' => (int) ($rawPagination['offset'] ?? $offset),
+                'total'  => (int) ($rawPagination['total'] ?? count($schedules)),
+            ],
+        ];
+    }
+
+    /**
+     * Get a scheduled send by ID
+     */
+    public function getSchedule(string $deviceId, string $scheduleId): Schedule
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedId = self::assertValidScheduleId($scheduleId);
+
+        $response = $this->get("/send/schedules/{$encodedId}", [], [
+            'X-Device-Id' => $devId,
+        ]);
+
+        return Schedule::fromArray($this->results($response, 'get scheduled send'));
+    }
+
+    /**
+     * Pause a scheduled send
+     */
+    public function pauseSchedule(string $deviceId, string $scheduleId): void
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedId = self::assertValidScheduleId($scheduleId);
+
+        $response = $this->post("/send/schedules/{$encodedId}/pause", [], [], [
+            'X-Device-Id' => $devId,
+        ]);
+
+        $this->results($response, 'pause scheduled send');
+    }
+
+    /**
+     * Resume a paused scheduled send
+     */
+    public function resumeSchedule(string $deviceId, string $scheduleId): void
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedId = self::assertValidScheduleId($scheduleId);
+
+        $response = $this->post("/send/schedules/{$encodedId}/resume", [], [], [
+            'X-Device-Id' => $devId,
+        ]);
+
+        $this->results($response, 'resume scheduled send');
+    }
+
+    /**
+     * Cancel a scheduled send
+     */
+    public function cancelSchedule(string $deviceId, string $scheduleId): void
+    {
+        $devId = self::assertValidDeviceId($deviceId);
+        $encodedId = self::assertValidScheduleId($scheduleId);
+
+        $response = $this->post("/send/schedules/{$encodedId}/cancel", [], [], [
+            'X-Device-Id' => $devId,
+        ]);
+
+        $this->results($response, 'cancel scheduled send');
+    }
+
+    /**
+     * Validate a path or header identifier to prevent path traversal and injection.
+     */
+    private static function validSegment(string $value, string $name = 'Identifier'): string
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            throw new InvalidArgumentException("{$name} cannot be empty or whitespace.");
+        }
+
+        if (str_contains($trimmed, '/') || str_contains($trimmed, '\\') || str_contains($trimmed, '..') || str_contains($trimmed, '?') || str_contains($trimmed, '#')) {
+            throw new InvalidArgumentException("{$name} contains invalid path characters.");
+        }
+
+        return $trimmed;
+    }
+
+    /**
+     * Validate and encode a URL path segment to prevent path traversal and injection.
+     */
+    private static function segment(string $value, string $name = 'Identifier'): string
+    {
+        return rawurlencode(self::validSegment($value, $name));
+    }
+
+    private static function assertValidDeviceId(string $deviceId): string
+    {
+        return self::validSegment($deviceId, 'Device ID');
+    }
+
+    private static function assertValidScheduleId(string $scheduleId): string
+    {
+        return self::segment($scheduleId, 'Schedule ID');
+    }
+
+    private static function assertValidMessageId(string $messageId): string
+    {
+        return self::segment($messageId, 'Message ID');
     }
 
     private function isPermanentMediaFailure(string $message): bool
@@ -793,20 +1114,14 @@ class GowaClient
     }
 
     /**
-     * @param array<string, mixed> $body
-     * @param array<string, mixed> $queryParams
-     * @param array<string, string> $headers
+     * @param array<string, mixed> $options
      * @return array{status_code: int, body: array<string, mixed>, raw_body: string}
      */
-    private function patch(string $endpoint, array $body = [], array $queryParams = [], array $headers = []): array
+    private function request(string $method, string $endpoint, array $options = []): array
     {
         try {
-            $res = $this->http->patch(ltrim($endpoint, '/'), [
-                'query'       => $queryParams,
-                'json'        => $body,
-                'headers'     => $headers,
-                'http_errors' => false,
-            ]);
+            $options['http_errors'] = false;
+            $res = $this->http->request($method, ltrim($endpoint, '/'), $options);
 
             $rawBody = (string) $res->getBody();
             $json = json_decode($rawBody, true);
@@ -817,8 +1132,27 @@ class GowaClient
                 'raw_body'    => $rawBody,
             ];
         } catch (GuzzleException $e) {
-            throw new GowaUnreachableException("HTTP PATCH {$endpoint} error: {$e->getMessage()}", 0, $e);
+            throw new GowaUnreachableException("HTTP {$method} {$endpoint} error: {$e->getMessage()}", 0, $e);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $queryParams
+     * @param array<string, string> $headers
+     * @return array{status_code: int, body: array<string, mixed>, raw_body: string}
+     */
+    private function patch(string $endpoint, array $body = [], array $queryParams = [], array $headers = []): array
+    {
+        $options = [
+            'headers' => $headers,
+            'query'   => $queryParams,
+        ];
+        if (! empty($body)) {
+            $options['json'] = $body;
+        }
+
+        return $this->request('PATCH', $endpoint, $options);
     }
 
     /**
@@ -829,25 +1163,15 @@ class GowaClient
      */
     private function post(string $endpoint, array $body = [], array $queryParams = [], array $headers = []): array
     {
-        try {
-            $res = $this->http->post(ltrim($endpoint, '/'), [
-                'query'       => $queryParams,
-                'json'        => $body,
-                'headers'     => $headers,
-                'http_errors' => false,
-            ]);
-
-            $rawBody = (string) $res->getBody();
-            $json = json_decode($rawBody, true);
-
-            return [
-                'status_code' => $res->getStatusCode(),
-                'body'        => is_array($json) ? $json : [],
-                'raw_body'    => $rawBody,
-            ];
-        } catch (GuzzleException $e) {
-            throw new GowaUnreachableException("HTTP POST {$endpoint} error: {$e->getMessage()}", 0, $e);
+        $options = [
+            'headers' => $headers,
+            'query'   => $queryParams,
+        ];
+        if (! empty($body)) {
+            $options['json'] = $body;
         }
+
+        return $this->request('POST', $endpoint, $options);
     }
 
     /**
@@ -857,24 +1181,23 @@ class GowaClient
      */
     private function get(string $endpoint, array $queryParams = [], array $headers = []): array
     {
-        try {
-            $res = $this->http->get(ltrim($endpoint, '/'), [
-                'query'       => $queryParams,
-                'headers'     => $headers,
-                'http_errors' => false,
-            ]);
+        return $this->request('GET', $endpoint, [
+            'headers' => $headers,
+            'query'   => $queryParams,
+        ]);
+    }
 
-            $rawBody = (string) $res->getBody();
-            $json = json_decode($rawBody, true);
-
-            return [
-                'status_code' => $res->getStatusCode(),
-                'body'        => is_array($json) ? $json : [],
-                'raw_body'    => $rawBody,
-            ];
-        } catch (GuzzleException $e) {
-            throw new GowaUnreachableException("HTTP GET {$endpoint} error: {$e->getMessage()}", 0, $e);
-        }
+    /**
+     * @param array<string, mixed> $queryParams
+     * @param array<string, string> $headers
+     * @return array{status_code: int, body: array<string, mixed>, raw_body: string}
+     */
+    private function delete(string $endpoint, array $queryParams = [], array $headers = []): array
+    {
+        return $this->request('DELETE', $endpoint, [
+            'headers' => $headers,
+            'query'   => $queryParams,
+        ]);
     }
 
     /**
@@ -924,10 +1247,23 @@ class GowaClient
     /**
      * @param array{status_code: int, body: array<string, mixed>, raw_body?: string} $response
      */
-    private function sentResult(array $response, string $action): SentMessage
+    private function sentResult(array $response, string $action, bool $allowSchedule = false): SentMessage
     {
         $results = $this->results($response, $action);
-        $id = (string) ($results['message_id'] ?? $response['body']['results']['message_id'] ?? '');
+        $id = is_string($results['message_id'] ?? null) ? trim((string) $results['message_id']) : '';
+        $scheduleId = is_string($results['schedule_id'] ?? null) ? trim((string) $results['schedule_id']) : '';
+        $scheduledAt = is_string($results['scheduled_at'] ?? null) && trim((string) $results['scheduled_at']) !== ''
+            ? trim((string) $results['scheduled_at'])
+            : null;
+
+        if ($allowSchedule && $scheduleId !== '') {
+            return new SentMessage(
+                providerMessageId: $id,
+                raw: $response['body'] ?? [],
+                scheduleId: $scheduleId,
+                scheduledAt: $scheduledAt,
+            );
+        }
 
         if ($id === '') {
             throw new GowaRequestException(
@@ -936,7 +1272,12 @@ class GowaClient
             );
         }
 
-        return new SentMessage(providerMessageId: $id, raw: $response['body']);
+        return new SentMessage(
+            providerMessageId: $id,
+            raw: $response['body'] ?? [],
+            scheduleId: $scheduleId !== '' ? $scheduleId : null,
+            scheduledAt: $scheduledAt,
+        );
     }
 
     private function normalizeMime(string $mimeType): string
